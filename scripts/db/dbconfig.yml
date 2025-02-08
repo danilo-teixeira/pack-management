@@ -1,0 +1,29 @@
+development:
+  dialect: mysql
+  datasource: ${DB_USER}:${DB_PASSWORD}@tcp(${DB_HOST}:${DB_PORT})/${DB_NAME}?parseTime=true
+  table: migrations
+  dir: migrations
+
+seeder:
+  dialect: mysql
+  datasource: ${DB_USER}:${DB_PASSWORD}@tcp(${DB_HOST}:${DB_PORT})/${DB_NAME}?parseTime=true
+  table: seeds_migrations
+  dir: migrations/seeders
+
+test:
+  dialect: mysql
+  datasource: ${DB_USER}:${DB_PASSWORD}@tcp(${DB_HOST}:${DB_PORT})/${DB_NAME}?parseTime=true
+  table: migrations
+  dir: migrations
+
+test-seeder:
+  dialect: mysql
+  datasource: ${DB_USER}:${DB_PASSWORD}@tcp(${DB_HOST}:${DB_PORT})/${DB_NAME}?parseTime=true
+  table: seeds_migrations
+  dir: migrations/test_seeders
+
+production:
+  dialect: postgres
+  datasource: ${DB_USER}:${DB_PASSWORD}@tcp(${DB_HOST}:${DB_PORT})/${DB_NAME}?parseTime=true
+  table: migrations
+  dir: migrations

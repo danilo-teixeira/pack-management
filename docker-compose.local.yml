@@ -1,0 +1,17 @@
+services:
+  db:
+    container_name: 'local-pack-management-db'
+    platform: linux/x86_64
+    image: 'mysql:5.7'
+    volumes:
+      - 'pack_management_dbdata:/var/lib/mysql'
+    ports:
+      - ${DB_PORT}:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+
+volumes:
+  pack_management_dbdata:

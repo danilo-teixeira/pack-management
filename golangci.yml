@@ -1,0 +1,72 @@
+run:
+  concurrency: 4
+  timeout: 5m
+  issues-exit-code: 2
+  tests: true
+  modules-download-mode: mod
+  allow-parallel-runners: true
+issues:
+  exclude-dirs:
+    - scripts
+    - vendor
+    - .vscode
+  exclude-files:
+    - "./...*_test.go"
+  exclude-dirs-use-default: false
+severity:
+  default-severity: error
+  case-sensitive: true
+linters:
+  enable-all: true
+  disable:
+    - gochecknoinits
+    - gochecknoglobals
+    - ireturn
+    - nlreturn
+    - gomnd
+    - gofumpt
+    - gci
+    - tagliatelle
+    - wrapcheck
+    - tagalign
+    - dupword
+    - gosmopolitan
+    - depguard
+    - funlen
+    - nonamedreturns
+    - exhaustruct
+    - godox
+    - mnd
+    - perfsprint
+linters-settings:
+  wsl:
+    allow-assign-and-anything: true
+  gocognit:
+    min-complexity: 20
+  gocyclo:
+    min-complexity: 20
+  cyclop:
+    max-complexity: 20
+  gosec:
+    exclude-generated: false
+    severity: low
+    confidence: high
+    concurrency: 12
+  varnamelen:
+    ignore-names:
+      - i
+      - err
+      - id
+      - tx
+  tagliatelle:
+    case:
+      rules:
+        json: snake
+  nolintlint:
+    allow-unused: true
+    require-explanation: true
+    require-specific: true
+  revive:
+    rules:
+      - name: unused-parameter
+        disabled: true

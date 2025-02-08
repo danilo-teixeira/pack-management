@@ -1,0 +1,22 @@
+{
+  "go.buildOnSave": "off",
+  "go.lintOnSave": "workspace",
+  "go.vetOnSave": "workspace",
+  "go.buildTags": "",
+  "go.buildFlags": [],
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": ["-v"],
+  "go.vetFlags": [],
+  "go.testOnSave": false,
+  "go.coverOnSave": false,
+  "editor.formatOnSave": true,
+  "go.formatTool": "gofmt",
+  "go.formatFlags": [],
+  "go.goroot": "",
+  "go.gopath": "",
+  "go.inferGopath": false,
+  "go.testFlags": ["-v"],
+  "go.testEnvVars": {
+    "BUNDEBUG": "0"
+  }
+}
