@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS `pack_management`.`pack` (
   `sender_id` VARCHAR(255) NOT NULL,
   `receiver_id` VARCHAR(255) NOT NULL,
   `status` ENUM('IN_TRANSIT', 'CREATED', 'DELIVERED', 'CANCELED') NOT NULL DEFAULT 'CREATED',
-  `estimate_delivery_date` DATE NULL DEFAULT NULL,
+  `estimated_delivery_date` TIMESTAMP NULL DEFAULT NULL,
   `delivered_at` TIMESTAMP NULL DEFAULT NULL,
   `canceled_at` TIMESTAMP NULL DEFAULT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
