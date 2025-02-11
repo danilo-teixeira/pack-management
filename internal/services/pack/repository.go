@@ -43,13 +43,15 @@ func (m *Model) ToEntity() *Entity {
 		return nil
 	}
 
+	estimatedDeliveryDate := m.EstimatedDeliveryDate.Format(time.DateOnly)
+
 	return &Entity{
 		ID:                    m.ID,
 		Description:           m.Description,
 		FunFact:               m.FunFact,
 		IsHoliday:             m.IsHoliday,
 		Status:                m.Status,
-		EstimatedDeliveryDate: m.EstimatedDeliveryDate,
+		EstimatedDeliveryDate: estimatedDeliveryDate,
 		DeliveredAt:           m.DeliveredAt,
 		CanceledAt:            m.CanceledAt,
 		CreatedAt:             m.CreatedAt,

@@ -2,6 +2,8 @@ package person
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"pack-management/internal/pkg/validator"
 	"time"
 
@@ -56,7 +58,7 @@ func (r *mysqlRepository) GetByName(ctx context.Context, name string) (*Entity, 
 
 	err := r.db.NewSelect().Model(&person).Where("name = ?", name).Scan(ctx)
 	if err != nil {
-		if err.Error() == notFoundError {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 

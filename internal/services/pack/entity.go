@@ -14,7 +14,7 @@ type (
 		Status                Status
 		Receiver              *person.Entity
 		Sender                *person.Entity
-		EstimatedDeliveryDate time.Time
+		EstimatedDeliveryDate string
 		DeliveredAt           *time.Time
 		CanceledAt            *time.Time
 		CreatedAt             time.Time
@@ -36,13 +36,19 @@ func (e *Entity) ToModel() *Model {
 		return nil
 	}
 
+	estimatedDeliveryDate := time.Time{}
+	if e.EstimatedDeliveryDate != "" {
+		withTime, _ := time.Parse(time.DateOnly, e.EstimatedDeliveryDate)
+		estimatedDeliveryDate = time.Date(withTime.Year(), withTime.Month(), withTime.Day(), 0, 0, 0, 0, time.Local)
+	}
+
 	model := &Model{
 		ID:                    e.ID,
 		Description:           e.Description,
 		FunFact:               e.FunFact,
 		IsHoliday:             e.IsHoliday,
 		Status:                e.Status,
-		EstimatedDeliveryDate: e.EstimatedDeliveryDate,
+		EstimatedDeliveryDate: estimatedDeliveryDate,
 		DeliveredAt:           e.DeliveredAt,
 		CanceledAt:            e.CanceledAt,
 		CreatedAt:             e.CreatedAt,

@@ -3,7 +3,6 @@ package pack
 import (
 	"pack-management/internal/pkg/validator"
 	"pack-management/internal/services/person"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -22,11 +21,10 @@ type (
 	}
 
 	CreatePackRequest struct {
-		Description           string    `json:"description" validate:"required"`
-		Status                Status    `json:"status" validate:"required"`
-		ReceiverName          string    `json:"recipient" validate:"required"`
-		SenderName            string    `json:"sender" validate:"required"`
-		EstimatedDeliveryDate time.Time `json:"estimated_delivery_date" validate:"required"`
+		Description           string `json:"description" validate:"required"`
+		ReceiverName          string `json:"recipient" validate:"required"`
+		SenderName            string `json:"sender" validate:"required"`
+		EstimatedDeliveryDate string `json:"estimated_delivery_date" validate:"required,datetime=2006-01-02"`
 	}
 
 	CreatePackResponse struct {
@@ -69,12 +67,12 @@ func (h *handler) createPack(ctx *fiber.Ctx) error {
 
 	err := validator.ValidateStruct(payload)
 	if err != nil {
-		ctx.Status(fiber.StatusBadRequest) // TODO: implement error handler
+		return ctx.SendStatus(fiber.StatusBadRequest) // TODO: implement error handler
 	}
 
 	pack, err := h.service.CreatePack(ctx.Context(), payload.ToEntity())
 	if err != nil {
-		ctx.Status(fiber.StatusInternalServerError) // TODO: implement error handler
+		return ctx.SendStatus(fiber.StatusInternalServerError) // TODO: implement error handler
 	}
 
 	response := &CreatePackResponse{}
@@ -85,7 +83,6 @@ func (h *handler) createPack(ctx *fiber.Ctx) error {
 func (r *CreatePackRequest) ToEntity() *Entity {
 	return &Entity{
 		Description:           r.Description,
-		Status:                r.Status,
 		EstimatedDeliveryDate: r.EstimatedDeliveryDate,
 		Receiver: &person.Entity{
 			Name: r.ReceiverName,
@@ -97,6 +94,10 @@ func (r *CreatePackRequest) ToEntity() *Entity {
 }
 
 func (r *CreatePackResponse) FromEntity(pack *Entity) *CreatePackResponse {
+	if pack == nil {
+		return nil
+	}
+
 	return &CreatePackResponse{
 		ID:           pack.ID,
 		Description:  pack.Description,

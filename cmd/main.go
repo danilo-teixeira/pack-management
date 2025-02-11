@@ -2,6 +2,8 @@ package main
 
 import (
 	"pack-management/internal/pkg/database"
+	"pack-management/internal/pkg/http/dogapi"
+	nagerdateapi "pack-management/internal/pkg/http/nagerdateapi"
 	"pack-management/internal/services/pack"
 	"pack-management/internal/services/person"
 
@@ -46,6 +48,9 @@ func main() {
 	// TODO: move to separate package???
 	app := fiber.New()
 
+	dogAPIClient := dogapi.NewDogAPIClient("https://dogapi.dog/api/v2")
+	nagerDateAPIClient := nagerdateapi.NewHolidayAPIClient("https://date.nager.at/api/v3")
+
 	personRepo := person.NewMysqlRepository(&person.RepositoryParams{
 		DB: db,
 	})
@@ -57,8 +62,10 @@ func main() {
 		DB: db,
 	})
 	packSvc := pack.NewService(&pack.ServiceParams{
-		Repo:          packRepo,
-		PersonService: personSvc,
+		Repo:               packRepo,
+		PersonService:      personSvc,
+		DogAPIClient:       dogAPIClient,
+		NagerDateAPIClient: nagerDateAPIClient,
 	})
 	pack.NewHTPPHandler(&pack.HandlerParams{
 		Service: packSvc,
