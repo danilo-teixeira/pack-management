@@ -3,10 +3,10 @@ package pack
 import (
 	"context"
 	"log"
+	"pack-management/internal/domain/person"
 	"pack-management/internal/pkg/http/dogapi"
 	"pack-management/internal/pkg/http/nagerdateapi"
 	"pack-management/internal/pkg/validator"
-	"pack-management/internal/services/person"
 	"slices"
 )
 

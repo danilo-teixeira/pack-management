@@ -2,7 +2,7 @@ package pack
 
 import (
 	"context"
-	"pack-management/internal/services/person"
+	"pack-management/internal/domain/person"
 	"time"
 
 	"github.com/uptrace/bun"

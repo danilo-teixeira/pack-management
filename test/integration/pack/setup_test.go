@@ -3,13 +3,13 @@ package pack_test
 import (
 	"net/http"
 	"os"
+	"pack-management/internal/domain/pack"
+	"pack-management/internal/domain/person"
 	"pack-management/internal/pkg/config"
 	"pack-management/internal/pkg/database"
 	"pack-management/internal/pkg/http/client"
 	"pack-management/internal/pkg/http/dogapi"
 	"pack-management/internal/pkg/http/nagerdateapi"
-	"pack-management/internal/services/pack"
-	"pack-management/internal/services/person"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"

@@ -1,8 +1,8 @@
 package pack
 
 import (
+	"pack-management/internal/domain/person"
 	"pack-management/internal/pkg/validator"
-	"pack-management/internal/services/person"
 
 	"github.com/gofiber/fiber/v2"
 )

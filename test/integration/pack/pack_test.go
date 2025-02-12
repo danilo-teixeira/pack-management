@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"pack-management/internal/services/pack"
+	"pack-management/internal/domain/pack"
 	"testing"
 
 	"github.com/h2non/gock"

@@ -1,7 +1,7 @@
 package pack
 
 import (
-	"pack-management/internal/services/person"
+	"pack-management/internal/domain/person"
 	"time"
 )
 
