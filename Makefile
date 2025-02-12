@@ -19,7 +19,10 @@ upgrade-pkgs:
 run:
 	docker-compose -f ./docker-compose.local.yml up --build -d && \
 	cd scripts/db/ && ./setup_db.sh && \
-	cd ../../ && $(cat .env | xargs) LOGGER_FORMAT=cli BUNDEBUG=2 go run cmd/main.go
+	cd ../../ && LOGGER_FORMAT=cli BUNDEBUG=2 go run cmd/main.go
+
+test-e2e:
+	gotestsum --format pkgname ./test/...
 
 # Build
 build:

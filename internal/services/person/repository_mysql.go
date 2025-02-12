@@ -21,10 +21,6 @@ type (
 	}
 )
 
-var (
-	notFoundError = "sql: no rows in result set"
-)
-
 func NewMysqlRepository(params *RepositoryParams) Repository {
 	params.validate()
 

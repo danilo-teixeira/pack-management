@@ -1,4 +1,4 @@
-package naegerdateapi
+package nagerdateapi
 
 import "context"
 

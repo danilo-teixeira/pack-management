@@ -8,6 +8,7 @@
       "mode": "auto",
       "program": "cmd/main.go",
       "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
       "env": {
         "BUNDEBUG": "2"
       }

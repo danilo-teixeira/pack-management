@@ -62,7 +62,7 @@ func (p *HandlerParams) validate() {
 func (h *handler) createPack(ctx *fiber.Ctx) error {
 	payload := &CreatePackRequest{}
 	if err := ctx.BodyParser(payload); err != nil {
-		return err
+		return ctx.SendStatus(fiber.StatusBadRequest) // TODO: implement error handler
 	}
 
 	err := validator.ValidateStruct(payload)

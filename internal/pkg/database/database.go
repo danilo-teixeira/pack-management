@@ -68,5 +68,12 @@ func (s *service) Connect() (*bun.DB, error) {
 		return nil, err
 	}
 
-	return bun.NewDB(sqldb, mysqldialect.New()), nil
+	db := bun.NewDB(sqldb, mysqldialect.New())
+
+	_, err = db.Query("SELECT 1")
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }

@@ -65,3 +65,11 @@ func (e *Entity) ToModel() *Model {
 
 	return model
 }
+
+func (s *Status) String() string {
+	if s == nil {
+		return ""
+	}
+
+	return string(*s)
+}

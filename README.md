@@ -11,3 +11,7 @@ Run local database image
 ```sh
 docker compose -f './docker-compose.local.yml' up -d --build 'db'
 ```
+
+```sh
+export $(cat .env | xargs)
+```

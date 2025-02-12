@@ -1,32 +1,33 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
+	"errors"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"pack-management/internal/pkg/config"
 	"pack-management/internal/pkg/database"
 	"pack-management/internal/pkg/http/dogapi"
-	nagerdateapi "pack-management/internal/pkg/http/nagerdateapi"
+	"pack-management/internal/pkg/http/nagerdateapi"
 	"pack-management/internal/services/pack"
 	"pack-management/internal/services/person"
+	"syscall"
+	"time"
 
-	"github.com/caarlos0/env"
 	"github.com/gofiber/fiber/v2"
 )
 
-type (
-	config struct {
-		DBHost     string `env:"DB_HOST,required"`
-		DBPort     string `env:"DB_PORT,required"`
-		DBName     string `env:"DB_NAME,required"`
-		DBUser     string `env:"DB_USER,required"`
-		DBPassword string `env:"DB_PASSWORD,required"`
-	}
+const (
+	appName = "pack-management"
 )
 
 func main() {
-	// TODO: move to config package
-	var cfg config
-	err := env.Parse(&cfg)
+	cfg, err := config.NewConfig()
 	if err != nil {
-		panic(err)
+		log.Fatalf("Config error: %v", err)
 	}
 
 	db, err := database.NewDatabase(&database.Params{
@@ -37,16 +38,18 @@ func main() {
 		DBPassword: cfg.DBPassword,
 	}).Connect()
 	if err != nil {
-		panic(err)
-	}
-
-	_, err = db.Query("SELECT 1")
-	if err != nil {
-		panic("Failed to connect to database")
+		log.Fatalf("Database connection error: %v", err)
 	}
 
 	// TODO: move to separate package???
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		AppName:                  appName,
+		JSONEncoder:              json.Marshal,
+		JSONDecoder:              json.Unmarshal,
+		DisableStartupMessage:    true,
+		EnablePrintRoutes:        false,
+		EnableSplittingOnParsers: true,
+	})
 
 	dogAPIClient := dogapi.NewDogAPIClient("https://dogapi.dog/api/v2")
 	nagerDateAPIClient := nagerdateapi.NewHolidayAPIClient("https://date.nager.at/api/v3")
@@ -72,8 +75,27 @@ func main() {
 		App:     app,
 	})
 
-	err = app.Listen(":3300")
-	if err != nil {
-		panic(err)
+	go func() {
+		err = app.Listen(":3300")
+		if err != nil {
+			if !errors.Is(err, http.ErrServerClosed) {
+				log.Fatalf("HTTP server error: %v", err)
+			}
+
+			log.Println("Stopped serving new connections.")
+		}
+	}()
+
+	// TODO: move to separate package???
+	shutdownC := make(chan os.Signal, 1)
+	signal.Notify(shutdownC, syscall.SIGINT, syscall.SIGTERM)
+	<-shutdownC
+
+	ctx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownRelease()
+
+	if err := app.ShutdownWithContext(ctx); err != nil {
+		log.Fatalf("HTTP shutdown error: %v", err)
 	}
+	log.Println("Shutdown complete.")
 }
