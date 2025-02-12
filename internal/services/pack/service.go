@@ -2,9 +2,9 @@ package pack
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"pack-management/internal/pkg/http/dogapi"
-	naegerdateapi "pack-management/internal/pkg/http/nagerdateapi"
+	"pack-management/internal/pkg/http/nagerdateapi"
 	"pack-management/internal/pkg/validator"
 	"pack-management/internal/services/person"
 	"slices"
@@ -19,14 +19,14 @@ type (
 		repo               Repository
 		personService      person.Service
 		dogAPIClient       dogapi.Client
-		nagerDateAPIClient naegerdateapi.Client
+		nagerDateAPIClient nagerdateapi.Client
 	}
 
 	ServiceParams struct {
-		Repo               Repository           `validate:"required"`
-		PersonService      person.Service       `validate:"required"`
-		DogAPIClient       dogapi.Client        `validate:"required"`
-		NagerDateAPIClient naegerdateapi.Client `validate:"required"`
+		Repo               Repository          `validate:"required"`
+		PersonService      person.Service      `validate:"required"`
+		DogAPIClient       dogapi.Client       `validate:"required"`
+		NagerDateAPIClient nagerdateapi.Client `validate:"required"`
 	}
 )
 
@@ -74,19 +74,23 @@ func (s *service) CreatePack(ctx context.Context, pack *Entity) (*Entity, error)
 }
 
 func (s *service) setFunFact(ctx context.Context, pack *Entity) {
-	funFact, err := s.dogAPIClient.GetRandomFunFact(ctx)
+	funFacts, err := s.dogAPIClient.GetRandomFacts(ctx, 1)
 	if err != nil {
 		// TODO: implement error handler
-		fmt.Println(err)
+		log.Printf("Error getting fun facts: %s. pack: %s", err, pack.ID)
 		return
 	}
 
-	pack.FunFact = &funFact
+	if len(funFacts) == 0 {
+		log.Printf("No fun facts found to pack: %s", pack.ID)
+		return
+	}
+
+	pack.FunFact = &funFacts[0].Attributes.Body
 
 	err = s.repo.UpdateByID(ctx, pack.ID, pack)
 	if err != nil {
-		// TODO: implement error handler
-		fmt.Println(err)
+		log.Printf("Error updating pack: (%s). pack: %s", err, pack.ID)
 	}
 }
 
@@ -96,10 +100,10 @@ func (s *service) setIsHoliday(ctx context.Context, pack *Entity) {
 	holidayResp, err := s.nagerDateAPIClient.GetHolidays(ctx, "BR", year) // TODO: Get from cache or from API???
 	if err != nil {
 		// TODO: implement error handler
-		fmt.Println(err)
+		log.Printf("Error getting holidays: %s. pack: %s", err, pack.ID)
 	}
 
-	isHoliday := slices.ContainsFunc(holidayResp, func(holiday naegerdateapi.Holiday) bool {
+	isHoliday := slices.ContainsFunc(holidayResp, func(holiday nagerdateapi.Holiday) bool {
 		return holiday.Date == pack.EstimatedDeliveryDate
 	})
 
@@ -108,6 +112,6 @@ func (s *service) setIsHoliday(ctx context.Context, pack *Entity) {
 	err = s.repo.UpdateByID(ctx, pack.ID, pack)
 	if err != nil {
 		// TODO: implement error handler
-		fmt.Println(err)
+		log.Printf("Error updating pack: (%s). pack: %s", err, pack.ID)
 	}
 }

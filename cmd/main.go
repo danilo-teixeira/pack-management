@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"pack-management/internal/pkg/config"
 	"pack-management/internal/pkg/database"
+	"pack-management/internal/pkg/http/client"
 	"pack-management/internal/pkg/http/dogapi"
 	"pack-management/internal/pkg/http/nagerdateapi"
 	"pack-management/internal/services/pack"
@@ -51,8 +52,15 @@ func main() {
 		EnableSplittingOnParsers: true,
 	})
 
-	dogAPIClient := dogapi.NewDogAPIClient("https://dogapi.dog/api/v2")
-	nagerDateAPIClient := nagerdateapi.NewHolidayAPIClient("https://date.nager.at/api/v3")
+	baseClient := client.NewClient()
+	dogAPIClient := dogapi.NewDogAPIClient(
+		baseClient,
+		"https://dogapi.dog/api/v2",
+	)
+	nagerDateAPIClient := nagerdateapi.NewHolidayAPIClient(
+		baseClient,
+		"https://date.nager.at/api/v3",
+	)
 
 	personRepo := person.NewMysqlRepository(&person.RepositoryParams{
 		DB: db,

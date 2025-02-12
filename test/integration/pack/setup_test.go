@@ -3,34 +3,29 @@ package pack_test
 import (
 	"net/http"
 	"os"
+	"pack-management/internal/pkg/config"
 	"pack-management/internal/pkg/database"
+	"pack-management/internal/pkg/http/client"
 	"pack-management/internal/pkg/http/dogapi"
 	"pack-management/internal/pkg/http/nagerdateapi"
 	"pack-management/internal/services/pack"
 	"pack-management/internal/services/person"
 	"testing"
 
-	"github.com/caarlos0/env"
 	"github.com/gofiber/fiber/v2"
 	"github.com/h2non/gock"
 )
 
-type (
-	config struct {
-		DBHost     string `env:"DB_HOST,required"`
-		DBPort     string `env:"DB_PORT,required"`
-		DBName     string `env:"DB_NAME,required"`
-		DBUser     string `env:"DB_USER,required"`
-		DBPassword string `env:"DB_PASSWORD,required"`
-	}
+var (
+	shutdownServer func()
+	clientApp      func(req *http.Request) (*http.Response, error)
+
+	dogApiURL       = "http://dogapidog:1000"
+	negerDateAPIURL = "http://datenagerat:1000"
 )
 
-var shutdownServer func()
-var clientApp func(req *http.Request) (*http.Response, error)
-
 func beforeAll() {
-	var cfg config
-	err := env.Parse(&cfg)
+	cfg, err := config.NewConfig()
 	if err != nil {
 		panic(err)
 	}
@@ -50,8 +45,9 @@ func beforeAll() {
 		panic(err)
 	}
 
-	dogAPIClient := dogapi.NewDogAPIClient("https://dogapi.dog/api/v2")
-	nagerDateAPIClient := nagerdateapi.NewHolidayAPIClient("https://date.nager.at/api/v3")
+	baseClient := client.NewClient()
+	dogAPIClient := dogapi.NewDogAPIClient(baseClient, dogApiURL)
+	nagerDateAPIClient := nagerdateapi.NewHolidayAPIClient(baseClient, negerDateAPIURL)
 
 	personRepo := person.NewMysqlRepository(&person.RepositoryParams{
 		DB: db,

@@ -1,21 +1,43 @@
 package dogapi
 
-import "context"
-
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"pack-management/internal/pkg/http/client"
+)
 
 type (
 	dogAIPClient struct {
-		url string
+		baseURL    string
+		baseClient client.Client
 	}
 )
 
-func NewDogAPIClient(url string) Client {
+func NewDogAPIClient(baseClient client.Client, baseURL string) Client {
 	return &dogAIPClient{
-		url: url,
+		baseURL:    baseURL,
+		baseClient: baseClient,
 	}
 }
 
-func (c *dogAIPClient) GetRandomFunFact(ctx context.Context) (string, error) {
-	// TODO: Implement this
-	return "Dogs are awesome", nil
+func (c *dogAIPClient) GetRandomFacts(ctx context.Context, limit int) ([]FactResponse, error) {
+	if limit < 1 {
+		limit = 1
+	}
+
+	factList := FactResponseList{}
+	err := c.baseClient.Do(
+		ctx,
+		client.Request{
+			Method: http.MethodGet,
+			URL:    fmt.Sprintf("%s/facts?limit=%d", c.baseURL, limit),
+		},
+		&factList,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return factList.Data, nil
 }
