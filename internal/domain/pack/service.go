@@ -8,11 +8,13 @@ import (
 	"pack-management/internal/pkg/http/nagerdateapi"
 	"pack-management/internal/pkg/validator"
 	"slices"
+	"time"
 )
 
 type (
 	Service interface {
 		CreatePack(ctx context.Context, pack *Entity) (*Entity, error)
+		UpdatePackStatusByID(ctx context.Context, id string, pack *Entity) (*Entity, error)
 	}
 
 	service struct {
@@ -71,6 +73,36 @@ func (s *service) CreatePack(ctx context.Context, pack *Entity) (*Entity, error)
 	go s.setIsHoliday(ctx, pack)
 
 	return pack, nil
+}
+
+func (s *service) UpdatePackStatusByID(ctx context.Context, id string, pack *Entity) (*Entity, error) {
+	currentPack, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if currentPack == nil {
+		return nil, ErrPackNotFound
+	}
+
+	err = currentPack.Status.ValidateChangeStatus(pack.Status)
+	if err != nil {
+		return nil, err
+	}
+
+	currentPack.Status = pack.Status
+
+	if currentPack.Status == StatusDelivered {
+		now := time.Now()
+		currentPack.DeliveredAt = &now
+	}
+
+	err = s.repo.UpdateByID(ctx, id, currentPack)
+	if err != nil {
+		return nil, err
+	}
+
+	return currentPack, nil
 }
 
 func (s *service) setFunFact(ctx context.Context, pack *Entity) {

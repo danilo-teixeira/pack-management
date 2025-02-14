@@ -2,6 +2,8 @@ package pack
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"pack-management/internal/pkg/validator"
 	"time"
 
@@ -59,7 +61,23 @@ func (r *mysqlRepository) UpdateByID(ctx context.Context, ID string, pack *Entit
 }
 
 func (r *mysqlRepository) GetByID(ctx context.Context, ID string) (*Entity, error) {
-	panic("not implemented")
+	pack := Model{}
+
+	err := r.db.NewSelect().
+		Model(&pack).
+		Where("pack.id = ?", ID).
+		Relation("Receiver").
+		Relation("Sender").
+		Scan(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return pack.ToEntity(), nil
 }
 
 func (r *mysqlRepository) newID() string {

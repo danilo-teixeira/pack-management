@@ -1,6 +1,7 @@
 package pack
 
 import (
+	"errors"
 	"pack-management/internal/domain/person"
 	"time"
 )
@@ -29,6 +30,9 @@ var (
 	StatusInTransit Status = "IN_TRANSIT"
 	StatusDelivered Status = "DELIVERED"
 	StatusCanceled  Status = "CANCELED"
+
+	ErrPackNotFound  = errors.New("pack not found")
+	ErrStatusInvalid = errors.New("status is invalid")
 )
 
 func (e *Entity) ToModel() *Model {
@@ -72,4 +76,28 @@ func (s *Status) String() string {
 	}
 
 	return string(*s)
+}
+
+func (s *Status) ValidateChangeStatus(newStatus Status) error {
+	if s == nil {
+		return nil
+	}
+
+	if *s == StatusDelivered {
+		return ErrStatusInvalid
+	}
+
+	if *s == StatusCanceled {
+		return ErrStatusInvalid
+	}
+
+	if *s == StatusCreated && newStatus != StatusInTransit {
+		return ErrStatusInvalid
+	}
+
+	if *s == StatusInTransit && newStatus != StatusDelivered && newStatus != StatusCanceled {
+		return ErrStatusInvalid
+	}
+
+	return nil
 }
