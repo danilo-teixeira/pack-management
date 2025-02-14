@@ -2,6 +2,7 @@ package pack
 
 import (
 	"errors"
+	"pack-management/internal/domain/packevent"
 	"pack-management/internal/domain/person"
 	"pack-management/internal/pkg/validator"
 
@@ -38,15 +39,16 @@ type (
 	}
 
 	PackJSON struct {
-		ID           string `json:"id"`
-		Description  string `json:"description"`
-		Status       Status `json:"status"`
-		ReceiverName string `json:"recipient"`
-		SenderName   string `json:"sender"`
-		CreatedAt    string `json:"created_at"`
-		UpdateAt     string `json:"updated_at"`
-		DeliveredAt  string `json:"delivered_at,omitempty"`
-		CanceledAt   string `json:"canceled_at,omitempty"`
+		ID           string                `json:"id"`
+		Description  string                `json:"description"`
+		Status       Status                `json:"status"`
+		ReceiverName string                `json:"recipient"`
+		SenderName   string                `json:"sender"`
+		CreatedAt    string                `json:"created_at"`
+		UpdateAt     string                `json:"updated_at"`
+		DeliveredAt  string                `json:"delivered_at,omitempty"`
+		CanceledAt   string                `json:"canceled_at,omitempty"`
+		Events       []packevent.EventJSON `json:"events,omitempty"`
 	}
 )
 
@@ -60,6 +62,7 @@ func NewHTPPHandler(params *HandlerParams) Handler {
 
 	group := h.app.Group("/packs")
 	group.Post("/", h.createPack)
+	group.Get("/:id", h.getPackByID)
 	group.Patch("/:id", h.updatePackStatusByID)
 	group.Post("/:id/cancel", h.cancelPackStatusByID)
 
@@ -90,6 +93,20 @@ func (h *handler) createPack(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(h.packEntityToJSON(pack))
+}
+
+func (h handler) getPackByID(ctx *fiber.Ctx) error {
+	params := &PackIDParam{}
+	if err := ctx.ParamsParser(params); err != nil {
+		return ctx.SendStatus(fiber.StatusBadRequest)
+	}
+
+	pack, err := h.service.GetPackByID(ctx.Context(), params.ID)
+	if err != nil {
+		return h.errorHandler(ctx, err)
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(h.packEntityToJSON(pack))
 }
 
 func (h *handler) updatePackStatusByID(ctx *fiber.Ctx) error {
@@ -183,6 +200,18 @@ func (h *handler) packEntityToJSON(pack *Entity) *PackJSON {
 
 	if pack.CanceledAt != nil {
 		resp.CanceledAt = pack.CanceledAt.String()
+	}
+
+	if len(pack.Events) > 0 {
+		for _, event := range pack.Events {
+			resp.Events = append(resp.Events, packevent.EventJSON{
+				ID:          event.ID,
+				PackID:      event.PackID,
+				Description: event.Description,
+				Date:        event.Date.String(),
+				CreatedAt:   event.CreatedAt.String(),
+			})
+		}
 	}
 
 	return resp

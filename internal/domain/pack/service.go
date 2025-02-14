@@ -14,6 +14,7 @@ import (
 type (
 	Service interface {
 		CreatePack(ctx context.Context, pack *Entity) (*Entity, error)
+		GetPackByID(ctx context.Context, id string) (*Entity, error)
 		UpdatePackStatusByID(ctx context.Context, id string, pack *Entity) (*Entity, error)
 		CancelPackStatusByID(ctx context.Context, id string) (*Entity, error)
 	}
@@ -76,14 +77,23 @@ func (s *service) CreatePack(ctx context.Context, pack *Entity) (*Entity, error)
 	return pack, nil
 }
 
-func (s *service) UpdatePackStatusByID(ctx context.Context, id string, pack *Entity) (*Entity, error) {
-	currentPack, err := s.repo.GetByID(ctx, id)
+func (s *service) GetPackByID(ctx context.Context, id string) (*Entity, error) {
+	pack, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	if currentPack == nil {
+	if pack == nil {
 		return nil, ErrPackNotFound
+	}
+
+	return pack, nil
+}
+
+func (s *service) UpdatePackStatusByID(ctx context.Context, id string, pack *Entity) (*Entity, error) {
+	currentPack, err := s.GetPackByID(ctx, id)
+	if err != nil {
+		return nil, err
 	}
 
 	err = currentPack.Status.ValidateChangeStatus(pack.Status)
@@ -107,13 +117,9 @@ func (s *service) UpdatePackStatusByID(ctx context.Context, id string, pack *Ent
 }
 
 func (s *service) CancelPackStatusByID(ctx context.Context, id string) (*Entity, error) {
-	currentPack, err := s.repo.GetByID(ctx, id)
+	currentPack, err := s.GetPackByID(ctx, id)
 	if err != nil {
 		return nil, err
-	}
-
-	if currentPack == nil {
-		return nil, ErrPackNotFound
 	}
 
 	if currentPack.Status != StatusCreated {

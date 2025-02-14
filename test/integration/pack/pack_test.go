@@ -78,6 +78,7 @@ func TestCreatePack(t *testing.T) {
 		assert.NotEmpty(t, packJSON.UpdateAt)
 		assert.Empty(t, packJSON.DeliveredAt)
 		assert.Empty(t, packJSON.CanceledAt)
+		assert.Empty(t, packJSON.Events)
 
 		time.Sleep(1 * time.Second) // wait for the gock to finish
 		assert.True(t, gock.IsDone())
@@ -89,6 +90,73 @@ func TestCreatePack(t *testing.T) {
 		resp, err := clientApp(httptest.NewRequest(http.MethodPost, "/packs", bytes.NewBuffer(body)))
 		assert.Nil(t, err)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+}
+
+func TestGetPackByID(t *testing.T) {
+	t.Run("Shoud get a pack successfully", func(t *testing.T) {
+		createdPack := createPack(t)
+
+		resp, err := clientApp(httptest.NewRequest(
+			http.MethodGet,
+			"/packs/"+createdPack.ID,
+			nil,
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		packJSON := pack.PackJSON{}
+		err = json.NewDecoder(resp.Body).Decode(&packJSON)
+		assert.Nil(t, err)
+
+		assert.NotEmpty(t, packJSON.ID)
+		assert.Equal(t, createdPack.Description, packJSON.Description)
+		assert.Equal(t, createdPack.SenderName, packJSON.SenderName)
+		assert.Equal(t, createdPack.ReceiverName, packJSON.ReceiverName)
+		assert.Equal(t, "CREATED", packJSON.Status.String())
+		assert.NotEmpty(t, packJSON.CreatedAt)
+		assert.NotEmpty(t, packJSON.UpdateAt)
+		assert.Empty(t, packJSON.DeliveredAt)
+		assert.Empty(t, packJSON.CanceledAt)
+		assert.Empty(t, packJSON.Events)
+	})
+
+	t.Run("Shoud get a pack successfully with events", func(t *testing.T) {
+		t.Skip("implement this scenario") // TODO: implement this scenario
+		createdPack := createPack(t)
+
+		resp, err := clientApp(httptest.NewRequest(
+			http.MethodGet,
+			"/packs/"+createdPack.ID+"?withEvents=true",
+			nil,
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		packJSON := pack.PackJSON{}
+		err = json.NewDecoder(resp.Body).Decode(&packJSON)
+		assert.Nil(t, err)
+
+		assert.NotEmpty(t, packJSON.ID)
+		assert.Equal(t, createdPack.Description, packJSON.Description)
+		assert.Equal(t, createdPack.SenderName, packJSON.SenderName)
+		assert.Equal(t, createdPack.ReceiverName, packJSON.ReceiverName)
+		assert.Equal(t, "CREATED", packJSON.Status.String())
+		assert.NotEmpty(t, packJSON.CreatedAt)
+		assert.NotEmpty(t, packJSON.UpdateAt)
+		assert.Empty(t, packJSON.DeliveredAt)
+		assert.Empty(t, packJSON.CanceledAt)
+		assert.NotEmpty(t, packJSON.Events)
+	})
+
+	t.Run("Shoud return error when pack not found", func(t *testing.T) {
+		resp, err := clientApp(httptest.NewRequest(
+			http.MethodGet,
+			"/packs/pack_not_found_1",
+			nil,
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
 }
 
@@ -118,6 +186,8 @@ func TestUpdatePackStatus(t *testing.T) {
 		assert.NotEmpty(t, packJSON.CreatedAt)
 		assert.NotEmpty(t, packJSON.UpdateAt)
 		assert.Empty(t, packJSON.DeliveredAt)
+		assert.Empty(t, packJSON.CanceledAt)
+		assert.Empty(t, packJSON.Events)
 	})
 
 	t.Run("Shoud update a pack status from IN_TRANSIT to DELIVERED successfully", func(t *testing.T) {
@@ -155,6 +225,8 @@ func TestUpdatePackStatus(t *testing.T) {
 		assert.NotEmpty(t, packJSON.CreatedAt)
 		assert.NotEmpty(t, packJSON.UpdateAt)
 		assert.NotEmpty(t, packJSON.DeliveredAt)
+		assert.Empty(t, packJSON.CanceledAt)
+		assert.Empty(t, packJSON.Events)
 	})
 
 	t.Run("Shoud return error when skip from CREATED to DELIVERED", func(t *testing.T) {
@@ -221,6 +293,7 @@ func TestCancelPack(t *testing.T) {
 		assert.NotEmpty(t, packJSON.UpdateAt)
 		assert.Empty(t, packJSON.DeliveredAt)
 		assert.NotEmpty(t, packJSON.CanceledAt)
+		assert.Empty(t, packJSON.Events)
 	})
 
 	t.Run("Shoud return error when try to cancel a in transit pack", func(t *testing.T) {
@@ -343,7 +416,7 @@ func createPack(t *testing.T) pack.PackJSON {
 	err = json.NewDecoder(resp.Body).Decode(&packJSON)
 	assert.Nil(t, err)
 
-	time.Sleep(10 * time.Millisecond) // wait for the gock to finish
+	time.Sleep(1 * time.Millisecond) // wait for the gock to finish
 	assert.True(t, gock.IsDone())
 
 	return packJSON

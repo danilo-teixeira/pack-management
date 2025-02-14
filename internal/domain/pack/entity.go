@@ -2,6 +2,7 @@ package pack
 
 import (
 	"errors"
+	"pack-management/internal/domain/packevent"
 	"pack-management/internal/domain/person"
 	"time"
 )
@@ -20,6 +21,7 @@ type (
 		CanceledAt            *time.Time
 		CreatedAt             time.Time
 		UpdatedAt             time.Time
+		Events                []packevent.Entity
 	}
 
 	Status string
