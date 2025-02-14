@@ -15,6 +15,7 @@ type (
 	Service interface {
 		CreatePack(ctx context.Context, pack *Entity) (*Entity, error)
 		UpdatePackStatusByID(ctx context.Context, id string, pack *Entity) (*Entity, error)
+		CancelPackStatusByID(ctx context.Context, id string) (*Entity, error)
 	}
 
 	service struct {
@@ -96,6 +97,32 @@ func (s *service) UpdatePackStatusByID(ctx context.Context, id string, pack *Ent
 		now := time.Now()
 		currentPack.DeliveredAt = &now
 	}
+
+	err = s.repo.UpdateByID(ctx, id, currentPack)
+	if err != nil {
+		return nil, err
+	}
+
+	return currentPack, nil
+}
+
+func (s *service) CancelPackStatusByID(ctx context.Context, id string) (*Entity, error) {
+	currentPack, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if currentPack == nil {
+		return nil, ErrPackNotFound
+	}
+
+	if currentPack.Status != StatusCreated {
+		return nil, ErrCannotCancel
+	}
+
+	now := time.Now()
+	currentPack.Status = StatusCanceled
+	currentPack.CanceledAt = &now
 
 	err = s.repo.UpdateByID(ctx, id, currentPack)
 	if err != nil {

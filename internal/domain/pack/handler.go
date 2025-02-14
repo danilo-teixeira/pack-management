@@ -28,22 +28,16 @@ type (
 		EstimatedDeliveryDate string `json:"estimated_delivery_date" validate:"required,datetime=2006-01-02"`
 	}
 
-	CreatePackResponse struct {
-		ID           string `json:"id"`
-		Description  string `json:"description"`
-		Status       Status `json:"status"`
-		ReceiverName string `json:"recipient"`
-		SenderName   string `json:"sender"`
-		CreatedAt    string `json:"created_at"`
-		UpdateAt     string `json:"updated_at"`
+	PackIDParam struct {
+		ID string `params:"id"`
 	}
 
 	UpdatePackStatusRequest struct {
-		ID     string `params:"id"`
+		PackIDParam
 		Status Status `json:"status" validate:"required,oneof=CREATED IN_TRANSIT DELIVERED"`
 	}
 
-	UpdatePackResponse struct {
+	PackJSON struct {
 		ID           string `json:"id"`
 		Description  string `json:"description"`
 		Status       Status `json:"status"`
@@ -52,6 +46,7 @@ type (
 		CreatedAt    string `json:"created_at"`
 		UpdateAt     string `json:"updated_at"`
 		DeliveredAt  string `json:"delivered_at,omitempty"`
+		CanceledAt   string `json:"canceled_at,omitempty"`
 	}
 )
 
@@ -66,6 +61,7 @@ func NewHTPPHandler(params *HandlerParams) Handler {
 	group := h.app.Group("/packs")
 	group.Post("/", h.createPack)
 	group.Patch("/:id", h.updatePackStatusByID)
+	group.Post("/:id/cancel", h.cancelPackStatusByID)
 
 	return h
 }
@@ -93,9 +89,7 @@ func (h *handler) createPack(ctx *fiber.Ctx) error {
 		return h.errorHandler(ctx, err)
 	}
 
-	response := &CreatePackResponse{}
-
-	return ctx.Status(fiber.StatusCreated).JSON(response.FromEntity(pack))
+	return ctx.Status(fiber.StatusCreated).JSON(h.packEntityToJSON(pack))
 }
 
 func (h *handler) updatePackStatusByID(ctx *fiber.Ctx) error {
@@ -119,9 +113,21 @@ func (h *handler) updatePackStatusByID(ctx *fiber.Ctx) error {
 		return h.errorHandler(ctx, err)
 	}
 
-	response := &UpdatePackResponse{}
+	return ctx.Status(fiber.StatusOK).JSON(h.packEntityToJSON(pack))
+}
 
-	return ctx.Status(fiber.StatusOK).JSON(response.FromEntity(pack))
+func (h *handler) cancelPackStatusByID(ctx *fiber.Ctx) error {
+	params := &PackIDParam{}
+	if err := ctx.ParamsParser(params); err != nil {
+		return ctx.SendStatus(fiber.StatusBadRequest)
+	}
+
+	pack, err := h.service.CancelPackStatusByID(ctx.Context(), params.ID)
+	if err != nil {
+		return h.errorHandler(ctx, err)
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(h.packEntityToJSON(pack))
 }
 
 func (h *handler) errorHandler(ctx *fiber.Ctx, err error) error {
@@ -129,7 +135,8 @@ func (h *handler) errorHandler(ctx *fiber.Ctx, err error) error {
 		return ctx.SendStatus(fiber.StatusNotFound)
 	}
 
-	if errors.Is(err, ErrStatusInvalid) {
+	if errors.Is(err, ErrStatusInvalid) ||
+		errors.Is(err, ErrCannotCancel) {
 		return ctx.SendStatus(fiber.StatusBadRequest)
 	}
 
@@ -155,28 +162,12 @@ func (r *CreatePackRequest) ToEntity() *Entity {
 	}
 }
 
-func (r *CreatePackResponse) FromEntity(pack *Entity) *CreatePackResponse {
+func (h *handler) packEntityToJSON(pack *Entity) *PackJSON {
 	if pack == nil {
 		return nil
 	}
 
-	return &CreatePackResponse{
-		ID:           pack.ID,
-		Description:  pack.Description,
-		Status:       pack.Status,
-		ReceiverName: pack.Receiver.Name,
-		SenderName:   pack.Sender.Name,
-		CreatedAt:    pack.CreatedAt.String(),
-		UpdateAt:     pack.UpdatedAt.String(),
-	}
-}
-
-func (r *UpdatePackResponse) FromEntity(pack *Entity) *UpdatePackResponse {
-	if pack == nil {
-		return nil
-	}
-
-	resp := &UpdatePackResponse{
+	resp := &PackJSON{
 		ID:           pack.ID,
 		Description:  pack.Description,
 		Status:       pack.Status,
@@ -188,6 +179,10 @@ func (r *UpdatePackResponse) FromEntity(pack *Entity) *UpdatePackResponse {
 
 	if pack.DeliveredAt != nil {
 		resp.DeliveredAt = pack.DeliveredAt.String()
+	}
+
+	if pack.CanceledAt != nil {
+		resp.CanceledAt = pack.CanceledAt.String()
 	}
 
 	return resp

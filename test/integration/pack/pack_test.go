@@ -65,7 +65,7 @@ func TestCreatePack(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
-		packJSON := pack.CreatePackResponse{}
+		packJSON := pack.PackJSON{}
 		err = json.NewDecoder(resp.Body).Decode(&packJSON)
 		assert.Nil(t, err)
 
@@ -76,6 +76,8 @@ func TestCreatePack(t *testing.T) {
 		assert.Equal(t, "CREATED", packJSON.Status.String())
 		assert.NotEmpty(t, packJSON.CreatedAt)
 		assert.NotEmpty(t, packJSON.UpdateAt)
+		assert.Empty(t, packJSON.DeliveredAt)
+		assert.Empty(t, packJSON.CanceledAt)
 
 		time.Sleep(1 * time.Second) // wait for the gock to finish
 		assert.True(t, gock.IsDone())
@@ -104,7 +106,7 @@ func TestUpdatePackStatus(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		packJSON := pack.UpdatePackResponse{}
+		packJSON := pack.PackJSON{}
 		err = json.NewDecoder(resp.Body).Decode(&packJSON)
 		assert.Nil(t, err)
 
@@ -141,7 +143,7 @@ func TestUpdatePackStatus(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-		packJSON := pack.UpdatePackResponse{}
+		packJSON := pack.PackJSON{}
 		err = json.NewDecoder(resp.Body).Decode(&packJSON)
 		assert.Nil(t, err)
 
@@ -194,7 +196,99 @@ func TestUpdatePackStatus(t *testing.T) {
 	})
 }
 
-func createPack(t *testing.T) pack.CreatePackResponse {
+func TestCancelPack(t *testing.T) {
+	t.Run("Shoud cancel a pack successfully", func(t *testing.T) {
+		createdPack := createPack(t)
+
+		resp, err := clientApp(httptest.NewRequest(
+			http.MethodPost,
+			"/packs/"+createdPack.ID+"/cancel",
+			nil,
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		packJSON := pack.PackJSON{}
+		err = json.NewDecoder(resp.Body).Decode(&packJSON)
+		assert.Nil(t, err)
+
+		assert.NotEmpty(t, packJSON.ID)
+		assert.Equal(t, createdPack.Description, packJSON.Description)
+		assert.Equal(t, createdPack.SenderName, packJSON.SenderName)
+		assert.Equal(t, createdPack.ReceiverName, packJSON.ReceiverName)
+		assert.Equal(t, "CANCELED", packJSON.Status.String())
+		assert.NotEmpty(t, packJSON.CreatedAt)
+		assert.NotEmpty(t, packJSON.UpdateAt)
+		assert.Empty(t, packJSON.DeliveredAt)
+		assert.NotEmpty(t, packJSON.CanceledAt)
+	})
+
+	t.Run("Shoud return error when try to cancel a in transit pack", func(t *testing.T) {
+		createdPack := createPack(t)
+
+		resp, err := clientApp(httptest.NewRequest(
+			http.MethodPatch,
+			"/packs/"+createdPack.ID,
+			bytes.NewBuffer([]byte(`{
+				"status": "IN_TRANSIT"
+			}`)),
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		resp, err = clientApp(httptest.NewRequest(
+			http.MethodPost,
+			"/packs/"+createdPack.ID+"/cancel",
+			nil,
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("Shoud return error when try to cancel a delivered pack", func(t *testing.T) {
+		createdPack := createPack(t)
+
+		resp, err := clientApp(httptest.NewRequest(
+			http.MethodPatch,
+			"/packs/"+createdPack.ID,
+			bytes.NewBuffer([]byte(`{
+				"status": "IN_TRANSIT"
+			}`)),
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		resp, err = clientApp(httptest.NewRequest(
+			http.MethodPatch,
+			"/packs/"+createdPack.ID,
+			bytes.NewBuffer([]byte(`{
+				"status": "DELIVERED"
+			}`)),
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		resp, err = clientApp(httptest.NewRequest(
+			http.MethodPost,
+			"/packs/"+createdPack.ID+"/cancel",
+			nil,
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("Shoud return error when pack not found", func(t *testing.T) {
+		resp, err := clientApp(httptest.NewRequest(
+			http.MethodPost,
+			"/packs/pack_not_found_1/cancle",
+			nil,
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
+}
+
+func createPack(t *testing.T) pack.PackJSON {
 	defer gock.Off()
 
 	gock.New(dogApiURL).
@@ -245,9 +339,12 @@ func createPack(t *testing.T) pack.CreatePackResponse {
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
-	packJSON := pack.CreatePackResponse{}
+	packJSON := pack.PackJSON{}
 	err = json.NewDecoder(resp.Body).Decode(&packJSON)
 	assert.Nil(t, err)
+
+	time.Sleep(10 * time.Millisecond) // wait for the gock to finish
+	assert.True(t, gock.IsDone())
 
 	return packJSON
 }

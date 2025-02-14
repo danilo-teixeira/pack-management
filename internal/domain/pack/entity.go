@@ -33,6 +33,7 @@ var (
 
 	ErrPackNotFound  = errors.New("pack not found")
 	ErrStatusInvalid = errors.New("status is invalid")
+	ErrCannotCancel  = errors.New("cannot cancel pack")
 )
 
 func (e *Entity) ToModel() *Model {
