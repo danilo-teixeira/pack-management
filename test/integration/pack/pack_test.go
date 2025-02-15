@@ -122,12 +122,12 @@ func TestGetPackByID(t *testing.T) {
 	})
 
 	t.Run("Shoud get a pack successfully with events", func(t *testing.T) {
-		t.Skip("implement this scenario") // TODO: implement this scenario
 		createdPack := createPack(t)
+		createEvent(t, createdPack.ID)
 
 		resp, err := clientApp(httptest.NewRequest(
 			http.MethodGet,
-			"/packs/"+createdPack.ID+"?withEvents=true",
+			"/packs/"+createdPack.ID+"?with_events=true",
 			nil,
 		))
 		assert.Nil(t, err)
@@ -136,7 +136,7 @@ func TestGetPackByID(t *testing.T) {
 		packJSON := pack.PackJSON{}
 		err = json.NewDecoder(resp.Body).Decode(&packJSON)
 		assert.Nil(t, err)
-
+		
 		assert.NotEmpty(t, packJSON.ID)
 		assert.Equal(t, createdPack.Description, packJSON.Description)
 		assert.Equal(t, createdPack.SenderName, packJSON.SenderName)
@@ -146,7 +146,13 @@ func TestGetPackByID(t *testing.T) {
 		assert.NotEmpty(t, packJSON.UpdateAt)
 		assert.Empty(t, packJSON.DeliveredAt)
 		assert.Empty(t, packJSON.CanceledAt)
-		assert.NotEmpty(t, packJSON.Events)
+
+		eventDate, _ := time.Parse(time.RFC3339, "2025-01-20T15:13:59Z")
+		assert.Len(t, packJSON.Events, 1)
+		assert.NotEmpty(t, packJSON.Events[0].ID)
+		assert.Equal(t, "Pacote chegou ao centro de distribuição", packJSON.Events[0].Description)
+		assert.Equal(t, "Centro de Distribuição São Paulo", packJSON.Events[0].Location)
+		assert.Equal(t, eventDate, packJSON.Events[0].Date)
 	})
 
 	t.Run("Shoud return error when pack not found", func(t *testing.T) {
@@ -420,4 +426,19 @@ func createPack(t *testing.T) pack.PackJSON {
 	assert.True(t, gock.IsDone())
 
 	return packJSON
+}
+
+func createEvent(t *testing.T, packID string) {
+	resp, err := clientApp(httptest.NewRequest(
+		http.MethodPost,
+		"/pack_events",
+		bytes.NewBuffer([]byte(`{
+			"pack_id": "`+packID+`",
+			"description": "Pacote chegou ao centro de distribuição",
+			"location": "Centro de Distribuição São Paulo",
+			"date": "2025-01-20T15:13:59Z"
+		}`)),
+	))
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 }

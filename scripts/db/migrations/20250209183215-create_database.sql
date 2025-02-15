@@ -30,8 +30,9 @@ CREATE TABLE IF NOT EXISTS `pack_management`.`pack` (
 CREATE TABLE IF NOT EXISTS `pack_management`.`pack_event` (
   `id` VARCHAR(255) NOT NULL,
   `pack_id` VARCHAR(255) NOT NULL,
-  `location` VARCHAR(255) NOT NULL,
+  `location` TEXT NOT NULL,
   `description` TEXT NOT NULL,
+  `date` TIMESTAMP NOT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),

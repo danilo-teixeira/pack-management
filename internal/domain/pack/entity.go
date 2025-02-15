@@ -21,7 +21,7 @@ type (
 		CanceledAt            *time.Time
 		CreatedAt             time.Time
 		UpdatedAt             time.Time
-		Events                []packevent.Entity
+		Events                []*packevent.Entity
 	}
 
 	Status string

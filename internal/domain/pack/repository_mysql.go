@@ -60,16 +60,21 @@ func (r *mysqlRepository) UpdateByID(ctx context.Context, ID string, pack *Entit
 	return nil
 }
 
-func (r *mysqlRepository) GetByID(ctx context.Context, ID string) (*Entity, error) {
+func (r *mysqlRepository) GetByID(ctx context.Context, ID string, withEvents bool) (*Entity, error) {
 	pack := Model{}
 
-	err := r.db.NewSelect().
+	query := r.db.NewSelect().
 		Model(&pack).
 		Where("pack.id = ?", ID).
+		Limit(1).
 		Relation("Receiver").
-		Relation("Sender").
-		Scan(ctx)
-	if err != nil {
+		Relation("Sender")
+
+	if withEvents {
+		query.Relation("Events")
+	}
+
+	if err := query.Scan(ctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}

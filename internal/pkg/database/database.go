@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 
+	"pack-management/internal/pkg/validator"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/mysqldialect"
-
-	"pack-management/internal/pkg/validator"
+	"github.com/uptrace/bun/extra/bundebug"
 )
 
 type (
@@ -69,6 +70,8 @@ func (s *service) Connect() (*bun.DB, error) {
 	}
 
 	db := bun.NewDB(sqldb, mysqldialect.New())
+
+	db.AddQueryHook(bundebug.NewQueryHook(bundebug.FromEnv("BUNDEBUG")))
 
 	_, err = db.Query("SELECT 1")
 	if err != nil {

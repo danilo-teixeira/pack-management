@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"pack-management/internal/domain/pack"
+	"pack-management/internal/domain/packevent"
 	"pack-management/internal/domain/person"
 	"pack-management/internal/pkg/config"
 	"pack-management/internal/pkg/database"
@@ -80,6 +81,17 @@ func main() {
 	})
 	pack.NewHTPPHandler(&pack.HandlerParams{
 		Service: packSvc,
+		App:     app,
+	})
+
+	packEventRepo := packevent.NewMysqlRepository(&packevent.RepositoryParams{
+		DB: db,
+	})
+	packEventSvc := packevent.NewService(&packevent.ServiceParams{
+		Repo: packEventRepo,
+	})
+	packevent.NewHTPPHandler(&packevent.HandlerParams{
+		Service: packEventSvc,
 		App:     app,
 	})
 

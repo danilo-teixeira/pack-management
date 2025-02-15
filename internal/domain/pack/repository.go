@@ -2,6 +2,7 @@ package pack
 
 import (
 	"context"
+	"pack-management/internal/domain/packevent"
 	"pack-management/internal/domain/person"
 	"time"
 
@@ -12,25 +13,26 @@ type (
 	Repository interface {
 		Create(ctx context.Context, pack *Entity) error
 		UpdateByID(ctx context.Context, ID string, pack *Entity) error
-		GetByID(ctx context.Context, ID string) (*Entity, error)
+		GetByID(ctx context.Context, ID string, withEvents bool) (*Entity, error)
 	}
 
 	Model struct {
 		bun.BaseModel         `bun:"table:pack,alias:pack"`
-		ID                    string        `bun:"id,pk"`
-		Description           string        `bun:"description"`
-		FunFact               *string       `bun:"fun_fact"`
-		IsHoliday             *bool         `bun:"is_holiday"`
-		Status                Status        `bun:"status"`
-		EstimatedDeliveryDate time.Time     `bun:"estimated_delivery_date"`
-		DeliveredAt           *time.Time    `bun:"delivered_at"`
-		CanceledAt            *time.Time    `bun:"canceled_at"`
-		CreatedAt             time.Time     `bun:"created_at"`
-		UpdatedAt             time.Time     `bun:"updated_at"`
-		ReceiverID            *string       `bun:"receiver_id"`
-		Receiver              *person.Model `bun:"rel:belongs-to"`
-		SenderID              *string       `bun:"sender_id"`
-		Sender                *person.Model `bun:"rel:belongs-to"`
+		ID                    string             `bun:"id,pk"`
+		Description           string             `bun:"description"`
+		FunFact               *string            `bun:"fun_fact"`
+		IsHoliday             *bool              `bun:"is_holiday"`
+		Status                Status             `bun:"status"`
+		EstimatedDeliveryDate time.Time          `bun:"estimated_delivery_date"`
+		DeliveredAt           *time.Time         `bun:"delivered_at"`
+		CanceledAt            *time.Time         `bun:"canceled_at"`
+		CreatedAt             time.Time          `bun:"created_at"`
+		UpdatedAt             time.Time          `bun:"updated_at"`
+		ReceiverID            *string            `bun:"receiver_id"`
+		Receiver              *person.Model      `bun:"rel:belongs-to"`
+		SenderID              *string            `bun:"sender_id"`
+		Sender                *person.Model      `bun:"rel:belongs-to"`
+		Events                []*packevent.Model `bun:"rel:has-many,join:id=pack_id"`
 	}
 )
 
@@ -45,6 +47,11 @@ func (m *Model) ToEntity() *Entity {
 
 	estimatedDeliveryDate := m.EstimatedDeliveryDate.Format(time.DateOnly)
 
+	events := make([]*packevent.Entity, len(m.Events))
+	for i, event := range m.Events {
+		events[i] = event.ToEntity()
+	}
+
 	return &Entity{
 		ID:                    m.ID,
 		Description:           m.Description,
@@ -58,5 +65,6 @@ func (m *Model) ToEntity() *Entity {
 		UpdatedAt:             m.UpdatedAt,
 		Receiver:              m.Receiver.ToEntity(),
 		Sender:                m.Sender.ToEntity(),
+		Events:                events,
 	}
 }

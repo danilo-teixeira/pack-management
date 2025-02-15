@@ -17,6 +17,6 @@
   "go.inferGopath": false,
   "go.testFlags": ["-v"],
   "go.testEnvVars": {
-    "BUNDEBUG": "0"
+    "BUNDEBUG": "1"
   }
 }

@@ -1,4 +1,4 @@
-package pack_test
+package packevent_test
 
 import (
 	"net/http"
@@ -14,7 +14,6 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/h2non/gock"
 )
 
 var (
@@ -94,7 +93,6 @@ func beforeAll() {
 }
 
 func AfterAll() {
-	gock.Off()
 	shutdownServer()
 }
 

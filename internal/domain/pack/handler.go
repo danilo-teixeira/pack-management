@@ -10,8 +10,6 @@ import (
 )
 
 type (
-	Handler interface{}
-
 	handler struct {
 		service Service
 		app     *fiber.App
@@ -27,6 +25,10 @@ type (
 		ReceiverName          string `json:"recipient" validate:"required"`
 		SenderName            string `json:"sender" validate:"required"`
 		EstimatedDeliveryDate string `json:"estimated_delivery_date" validate:"required,datetime=2006-01-02"`
+	}
+
+	GetPackQuery struct {
+		WithEvents bool `query:"with_events"`
 	}
 
 	PackIDParam struct {
@@ -52,7 +54,7 @@ type (
 	}
 )
 
-func NewHTPPHandler(params *HandlerParams) Handler {
+func NewHTPPHandler(params *HandlerParams) *handler {
 	params.validate()
 
 	h := &handler{
@@ -101,7 +103,12 @@ func (h handler) getPackByID(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(fiber.StatusBadRequest)
 	}
 
-	pack, err := h.service.GetPackByID(ctx.Context(), params.ID)
+	queries := &GetPackQuery{}
+	if err := ctx.QueryParser(queries); err != nil {
+		return ctx.SendStatus(fiber.StatusBadRequest)
+	}
+
+	pack, err := h.service.GetPackByID(ctx.Context(), params.ID, queries.WithEvents)
 	if err != nil {
 		return h.errorHandler(ctx, err)
 	}
@@ -208,8 +215,8 @@ func (h *handler) packEntityToJSON(pack *Entity) *PackJSON {
 				ID:          event.ID,
 				PackID:      event.PackID,
 				Description: event.Description,
-				Date:        event.Date.String(),
-				CreatedAt:   event.CreatedAt.String(),
+				Location:    event.Location,
+				Date:        event.Date,
 			})
 		}
 	}

@@ -14,7 +14,7 @@ import (
 type (
 	Service interface {
 		CreatePack(ctx context.Context, pack *Entity) (*Entity, error)
-		GetPackByID(ctx context.Context, id string) (*Entity, error)
+		GetPackByID(ctx context.Context, id string, withEvents bool) (*Entity, error)
 		UpdatePackStatusByID(ctx context.Context, id string, pack *Entity) (*Entity, error)
 		CancelPackStatusByID(ctx context.Context, id string) (*Entity, error)
 	}
@@ -77,8 +77,8 @@ func (s *service) CreatePack(ctx context.Context, pack *Entity) (*Entity, error)
 	return pack, nil
 }
 
-func (s *service) GetPackByID(ctx context.Context, id string) (*Entity, error) {
-	pack, err := s.repo.GetByID(ctx, id)
+func (s *service) GetPackByID(ctx context.Context, id string, withEvents bool) (*Entity, error) {
+	pack, err := s.repo.GetByID(ctx, id, withEvents)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (s *service) GetPackByID(ctx context.Context, id string) (*Entity, error) {
 }
 
 func (s *service) UpdatePackStatusByID(ctx context.Context, id string, pack *Entity) (*Entity, error) {
-	currentPack, err := s.GetPackByID(ctx, id)
+	currentPack, err := s.GetPackByID(ctx, id, false)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func (s *service) UpdatePackStatusByID(ctx context.Context, id string, pack *Ent
 }
 
 func (s *service) CancelPackStatusByID(ctx context.Context, id string) (*Entity, error) {
-	currentPack, err := s.GetPackByID(ctx, id)
+	currentPack, err := s.GetPackByID(ctx, id, false)
 	if err != nil {
 		return nil, err
 	}
