@@ -7,7 +7,8 @@ import (
 	"pack-management/internal/pkg/validator"
 	"time"
 
-	"github.com/google/uuid"
+	"pack-management/internal/pkg/uuid"
+
 	"github.com/uptrace/bun"
 )
 
