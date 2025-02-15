@@ -64,23 +64,6 @@ func InvertDirection(direction string) string {
 	return AscDirection
 }
 
-func getItemValue[T any](item T, cursorField string) (string, error) {
-	reflectedValue := reflect.ValueOf(item)
-
-	if reflectedValue.Kind() == reflect.Ptr {
-		reflectedValue = reflectedValue.Elem()
-	}
-
-	cursorFieldInterface := reflectedValue.FieldByName(cursorField).Interface()
-
-	value, ok := cursorFieldInterface.(string)
-	if ok {
-		return value, nil
-	}
-
-	return "", ErrInvalidCursorField
-}
-
 func BuildMetadata[T any](config CursorConfig, items []T) ([]T, *Metadata, error) {
 	hasMoreItems := len(items) > config.PageSize
 	if hasMoreItems {
@@ -118,21 +101,8 @@ func BuildMetadata[T any](config CursorConfig, items []T) ([]T, *Metadata, error
 	}, nil
 }
 
-func decodeCursor(config CursorConfig) (string, string, error) {
-	if config.PageCursor == nil {
-		return config.OrderStrategy, "", nil
-	}
-
-	cursorDirection, cursorValue, err := DecodeCursor(*config.PageCursor)
-	if err != nil {
-		return "", "", err
-	}
-
-	return cursorDirection, cursorValue, nil
-}
-
 func BuildCursorQuery(config CursorConfig, query *bun.SelectQuery) (*bun.SelectQuery, string, error) {
-	cursorDirection, cursorValue, err := decodeCursor(config)
+	cursorDirection, cursorValue, err := getCursorValues(config)
 	if err != nil {
 		return nil, "", err
 	}
@@ -148,6 +118,36 @@ func BuildCursorQuery(config CursorConfig, query *bun.SelectQuery) (*bun.SelectQ
 	query.Order("pack.id " + cursorDirection)
 
 	return query, cursorDirection, nil
+}
+
+func getItemValue[T any](item T, cursorField string) (string, error) {
+	reflectedValue := reflect.ValueOf(item)
+
+	if reflectedValue.Kind() == reflect.Ptr {
+		reflectedValue = reflectedValue.Elem()
+	}
+
+	cursorFieldInterface := reflectedValue.FieldByName(cursorField).Interface()
+
+	value, ok := cursorFieldInterface.(string)
+	if ok {
+		return value, nil
+	}
+
+	return "", ErrInvalidCursorField
+}
+
+func getCursorValues(config CursorConfig) (string, string, error) {
+	if config.PageCursor == nil {
+		return config.OrderStrategy, "", nil
+	}
+
+	cursorDirection, cursorValue, err := DecodeCursor(*config.PageCursor)
+	if err != nil {
+		return "", "", err
+	}
+
+	return cursorDirection, cursorValue, nil
 }
 
 func splitCursor(cursor string) []string {
