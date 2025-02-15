@@ -4,6 +4,7 @@ import (
 	"errors"
 	"pack-management/internal/domain/packevent"
 	"pack-management/internal/domain/person"
+	"pack-management/internal/pkg/pagination"
 	"pack-management/internal/pkg/validator"
 
 	"github.com/gofiber/fiber/v2"
@@ -35,6 +36,18 @@ type (
 		ID string `params:"id"`
 	}
 
+	ListPackQuery struct {
+		SenderName   *string `query:"sender_name"`
+		ReceiverName *string `query:"recipient_name"`
+		PageSize     int     `query:"page_size"`
+		PageCursor   *string `query:"page_cursor"`
+	}
+
+	ListPackJSON struct {
+		Items    []*PackJSON         `json:"items"`
+		Metadata pagination.Metadata `json:"metadata"`
+	}
+
 	UpdatePackStatusRequest struct {
 		PackIDParam
 		Status Status `json:"status" validate:"required,oneof=CREATED IN_TRANSIT DELIVERED"`
@@ -64,6 +77,7 @@ func NewHTPPHandler(params *HandlerParams) *handler {
 
 	group := h.app.Group("/packs")
 	group.Post("/", h.createPack)
+	group.Get("/", h.listPacks)
 	group.Get("/:id", h.getPackByID)
 	group.Patch("/:id", h.updatePackStatusByID)
 	group.Post("/:id/cancel", h.cancelPackStatusByID)
@@ -95,6 +109,41 @@ func (h *handler) createPack(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(h.packEntityToJSON(pack))
+}
+
+func (h *handler) listPacks(ctx *fiber.Ctx) error {
+	queries := &ListPackQuery{}
+	if err := ctx.QueryParser(queries); err != nil {
+		return ctx.SendStatus(fiber.StatusBadRequest)
+	}
+
+	filters := &ListFilters{
+		SenderName:   queries.SenderName,
+		ReceiverName: queries.ReceiverName,
+		PageSize:     queries.PageSize,
+		PageCursor:   queries.PageCursor,
+	}
+
+	packs, metadata, err := h.service.ListPacks(ctx.Context(), filters)
+	if err != nil {
+		return h.errorHandler(ctx, err)
+	}
+
+	packsJSON := make([]*PackJSON, 0, len(packs))
+	for _, pack := range packs {
+		packsJSON = append(packsJSON, h.packEntityToJSON(pack))
+	}
+
+	resp := &ListPackJSON{
+		Items: packsJSON,
+		Metadata: pagination.Metadata{
+			PageSize:   metadata.PageSize,
+			NextCursor: metadata.NextCursor,
+			PrevCursor: metadata.PrevCursor,
+		},
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
 }
 
 func (h handler) getPackByID(ctx *fiber.Ctx) error {

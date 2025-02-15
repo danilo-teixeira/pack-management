@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"pack-management/internal/pkg/pagination"
 	"pack-management/internal/pkg/uuid"
 	"pack-management/internal/pkg/validator"
 	"time"
@@ -19,6 +20,11 @@ type (
 	mysqlRepository struct {
 		db *bun.DB
 	}
+)
+
+var (
+	paginationDefaultOrder = pagination.DescDirection
+	paginationCursorField  = "ID"
 )
 
 func NewMysqlRepository(params *RepositoryParams) Repository {
@@ -47,6 +53,59 @@ func (r *mysqlRepository) Create(ctx context.Context, pack *Entity) error {
 	}
 
 	return nil
+}
+
+func (r *mysqlRepository) List(ctx context.Context, filters *ListFilters) ([]*Entity, *pagination.Metadata, error) {
+	packs := make([]*Model, 0)
+	query := r.db.NewSelect().
+		Model(&packs).
+		Relation("Sender").
+		Relation("Receiver").
+		Limit(filters.PageSize + 1)
+
+	if filters.SenderName != nil {
+		query.Where("sender.name = ?", *filters.SenderName)
+	}
+
+	if filters.ReceiverName != nil {
+		query.Where("receiver.name = ?", *filters.ReceiverName)
+	}
+
+	query, cursorDirection, err := pagination.BuildCursorQuery(
+		pagination.CursorConfig{
+			PageSize:      filters.PageSize,
+			PageCursor:    filters.PageCursor,
+			CursorField:   paginationCursorField,
+			OrderStrategy: paginationDefaultOrder,
+		}, query)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := query.Scan(ctx); err != nil {
+		return nil, nil, err
+	}
+
+	items, metadata, err := pagination.BuildMetadata(
+		pagination.CursorConfig{
+			PageSize:        filters.PageSize,
+			PageCursor:      filters.PageCursor,
+			CursorField:     paginationCursorField,
+			CursorDirection: cursorDirection,
+			OrderStrategy:   paginationDefaultOrder,
+		},
+		packs,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	entities := []*Entity{}
+	for _, pack := range items {
+		entities = append(entities, pack.ToEntity())
+	}
+
+	return entities, metadata, nil
 }
 
 func (r *mysqlRepository) UpdateByID(ctx context.Context, ID string, pack *Entity) error {

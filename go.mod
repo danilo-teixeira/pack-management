@@ -9,6 +9,8 @@ require (
 	github.com/gofiber/fiber/v2 v2.52.6
 	github.com/gofrs/uuid/v5 v5.3.1
 	github.com/h2non/gock v1.2.0
+	github.com/joho/godotenv v1.5.1
+	github.com/rubenv/sql-migrate v1.7.1
 	github.com/stretchr/testify v1.10.0
 	github.com/uptrace/bun v1.2.9
 	github.com/uptrace/bun/dialect/mysqldialect v1.2.9
@@ -21,13 +23,13 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
+	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

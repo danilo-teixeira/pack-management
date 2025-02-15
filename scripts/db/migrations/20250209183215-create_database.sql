@@ -1,6 +1,6 @@
 
 -- +migrate Up
-CREATE TABLE IF NOT EXISTS `pack_management`.`person` (
+CREATE TABLE IF NOT EXISTS `person` (
   `id` VARCHAR(255) NOT NULL,
   `name` VARCHAR(255) NOT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `pack_management`.`person` (
 );
 CREATE INDEX `person_name_index` ON `person` (`name`);
 
-CREATE TABLE IF NOT EXISTS `pack_management`.`pack` (
+CREATE TABLE IF NOT EXISTS `pack` (
   `id` VARCHAR(255) NOT NULL,
   `description` TEXT NOT NULL,
   `fun_fact` TEXT NULL DEFAULT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS `pack_management`.`pack` (
   FOREIGN KEY (`receiver_id`) REFERENCES `person`(`id`)
 );
 
-CREATE TABLE IF NOT EXISTS `pack_management`.`pack_event` (
+CREATE TABLE IF NOT EXISTS `pack_event` (
   `id` VARCHAR(255) NOT NULL,
   `pack_id` VARCHAR(255) NOT NULL,
   `location` TEXT NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS `pack_management`.`pack_event` (
   FOREIGN KEY (`pack_id`) REFERENCES `pack`(`id`)
 );
 
-CREATE TABLE IF NOT EXISTS `pack_management`.`holiday` (
+CREATE TABLE IF NOT EXISTS `holiday` (
   `id` VARCHAR(255) NOT NULL,
   `name` VARCHAR(255) NOT NULL,
   `date` DATE NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS `pack_management`.`holiday` (
 );
 
 -- +migrate Down
-DROP TABLE `pack_management`.`pack_event`;
-DROP TABLE `pack_management`.`pack`;
-DROP TABLE `pack_management`.`person`;
-DROP TABLE `pack_management`.`holiday`;
+DROP TABLE `pack_event`;
+DROP TABLE `pack`;
+DROP TABLE `person`;
+DROP TABLE `holiday`;

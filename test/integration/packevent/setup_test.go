@@ -6,14 +6,11 @@ import (
 	"pack-management/internal/domain/pack"
 	"pack-management/internal/domain/packevent"
 	"pack-management/internal/domain/person"
-	"pack-management/internal/pkg/config"
-	"pack-management/internal/pkg/database"
 	"pack-management/internal/pkg/http/client"
 	"pack-management/internal/pkg/http/dogapi"
 	"pack-management/internal/pkg/http/nagerdateapi"
+	"pack-management/test/helpers"
 	"testing"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 var (
@@ -25,39 +22,22 @@ var (
 )
 
 func beforeAll() {
-	cfg, err := config.NewConfig()
-	if err != nil {
-		panic(err)
-	}
-
-	app := fiber.New(fiber.Config{
-		AppName: "test",
-	})
-
-	db, err := database.NewDatabase(&database.Params{
-		DBHost:     cfg.DBHost,
-		DBPort:     cfg.DBPort,
-		DBName:     cfg.DBName,
-		DBUser:     cfg.DBUser,
-		DBPassword: cfg.DBPassword,
-	}).Connect()
-	if err != nil {
-		panic(err)
-	}
+	bunDB, app, shutdown := helpers.Setup()
+	shutdownServer = shutdown
 
 	baseClient := client.NewClient()
 	dogAPIClient := dogapi.NewDogAPIClient(baseClient, dogApiURL)
 	nagerDateAPIClient := nagerdateapi.NewHolidayAPIClient(baseClient, negerDateAPIURL)
 
 	personRepo := person.NewMysqlRepository(&person.RepositoryParams{
-		DB: db,
+		DB: bunDB,
 	})
 	personSvc := person.NewService(&person.ServiceParams{
 		Repo: personRepo,
 	})
 
 	packRepo := pack.NewMysqlRepository(&pack.RepositoryParams{
-		DB: db,
+		DB: bunDB,
 	})
 	packSvc := pack.NewService(&pack.ServiceParams{
 		Repo:               packRepo,
@@ -71,7 +51,7 @@ func beforeAll() {
 	})
 
 	packeventRepo := packevent.NewMysqlRepository(&packevent.RepositoryParams{
-		DB: db,
+		DB: bunDB,
 	})
 	packeventSvc := packevent.NewService(&packevent.ServiceParams{
 		Repo: packeventRepo,
@@ -84,11 +64,6 @@ func beforeAll() {
 	clientApp = func(req *http.Request) (*http.Response, error) {
 		req.Header.Set("Content-Type", "application/json")
 		return app.Test(req, -1)
-	}
-
-	shutdownServer = func() {
-		db.Close()
-		app.Shutdown()
 	}
 }
 

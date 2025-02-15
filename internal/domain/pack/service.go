@@ -6,6 +6,7 @@ import (
 	"pack-management/internal/domain/person"
 	"pack-management/internal/pkg/http/dogapi"
 	"pack-management/internal/pkg/http/nagerdateapi"
+	"pack-management/internal/pkg/pagination"
 	"pack-management/internal/pkg/validator"
 	"slices"
 	"time"
@@ -14,9 +15,17 @@ import (
 type (
 	Service interface {
 		CreatePack(ctx context.Context, pack *Entity) (*Entity, error)
+		ListPacks(ctx context.Context, filters *ListFilters) ([]*Entity, *pagination.Metadata, error)
 		GetPackByID(ctx context.Context, id string, withEvents bool) (*Entity, error)
 		UpdatePackStatusByID(ctx context.Context, id string, pack *Entity) (*Entity, error)
 		CancelPackStatusByID(ctx context.Context, id string) (*Entity, error)
+	}
+
+	ListFilters struct {
+		SenderName   *string
+		ReceiverName *string
+		PageSize     int
+		PageCursor   *string
 	}
 
 	service struct {
@@ -50,6 +59,23 @@ func (p *ServiceParams) validate() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (s *service) ListPacks(ctx context.Context, filters *ListFilters) ([]*Entity, *pagination.Metadata, error) {
+	if filters.PageSize == 0 {
+		filters.PageSize = 100
+	}
+
+	if filters.PageSize > 1000 {
+		filters.PageSize = 1000
+	}
+
+	packs, metadata, err := s.repo.List(ctx, filters)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return packs, metadata, nil
 }
 
 func (s *service) CreatePack(ctx context.Context, pack *Entity) (*Entity, error) {

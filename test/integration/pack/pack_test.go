@@ -95,7 +95,7 @@ func TestCreatePack(t *testing.T) {
 
 func TestGetPackByID(t *testing.T) {
 	t.Run("Shoud get a pack successfully", func(t *testing.T) {
-		createdPack := createPack(t)
+		createdPack := createPack(t, nil)
 
 		resp, err := clientApp(httptest.NewRequest(
 			http.MethodGet,
@@ -122,7 +122,7 @@ func TestGetPackByID(t *testing.T) {
 	})
 
 	t.Run("Shoud get a pack successfully with events", func(t *testing.T) {
-		createdPack := createPack(t)
+		createdPack := createPack(t, nil)
 		createEvent(t, createdPack.ID)
 
 		resp, err := clientApp(httptest.NewRequest(
@@ -136,7 +136,7 @@ func TestGetPackByID(t *testing.T) {
 		packJSON := pack.PackJSON{}
 		err = json.NewDecoder(resp.Body).Decode(&packJSON)
 		assert.Nil(t, err)
-		
+
 		assert.NotEmpty(t, packJSON.ID)
 		assert.Equal(t, createdPack.Description, packJSON.Description)
 		assert.Equal(t, createdPack.SenderName, packJSON.SenderName)
@@ -166,9 +166,148 @@ func TestGetPackByID(t *testing.T) {
 	})
 }
 
+func TestListPacks(t *testing.T) {
+
+	t.Run("Shoud list packs successfully", func(t *testing.T) {
+		resp, err := clientApp(httptest.NewRequest(
+			http.MethodGet,
+			"/packs",
+			nil,
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		respJSON := pack.ListPackJSON{}
+		err = json.NewDecoder(resp.Body).Decode(&respJSON)
+		assert.Nil(t, err)
+
+		assert.Len(t, respJSON.Items, 3)
+		assert.Equal(t, 100, respJSON.Metadata.PageSize)
+		assert.Empty(t, respJSON.Metadata.NextCursor)
+		assert.Empty(t, respJSON.Metadata.PrevCursor)
+	})
+
+	t.Run("Shoud list packs successfully with page_size filter", func(t *testing.T) {
+		resp, err := clientApp(httptest.NewRequest(
+			http.MethodGet,
+			"/packs?page_size=1",
+			nil,
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		respJSON := pack.ListPackJSON{}
+		err = json.NewDecoder(resp.Body).Decode(&respJSON)
+		assert.Nil(t, err)
+
+		assert.Len(t, respJSON.Items, 1)
+		assert.Equal(t, 1, respJSON.Metadata.PageSize)
+		assert.NotEmpty(t, respJSON.Metadata.NextCursor)
+		assert.Empty(t, respJSON.Metadata.PrevCursor)
+	})
+
+	t.Run("Shoud list packs successfully with page_cursor filter", func(t *testing.T) {
+		respPage1, err := clientApp(httptest.NewRequest(
+			http.MethodGet,
+			"/packs?page_size=1",
+			nil,
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, respPage1.StatusCode)
+
+		respPage1JSON := pack.ListPackJSON{}
+		err = json.NewDecoder(respPage1.Body).Decode(&respPage1JSON)
+		assert.Nil(t, err)
+
+		assert.Len(t, respPage1JSON.Items, 1)
+		assert.Equal(t, 1, respPage1JSON.Metadata.PageSize)
+		assert.NotEmpty(t, respPage1JSON.Metadata.NextCursor)
+		assert.Empty(t, respPage1JSON.Metadata.PrevCursor)
+
+		respPage2, err := clientApp(httptest.NewRequest(
+			http.MethodGet,
+			"/packs?page_size=1&page_cursor="+(respPage1JSON.Metadata.NextCursor),
+			nil,
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, respPage2.StatusCode)
+
+		respPage2JSON := pack.ListPackJSON{}
+		err = json.NewDecoder(respPage2.Body).Decode(&respPage2JSON)
+		assert.Nil(t, err)
+
+		assert.Len(t, respPage2JSON.Items, 1)
+		assert.Equal(t, 1, respPage2JSON.Metadata.PageSize)
+		assert.NotEmpty(t, respPage2JSON.Metadata.NextCursor)
+		assert.NotEmpty(t, respPage2JSON.Metadata.PrevCursor)
+
+		respPage3, err := clientApp(httptest.NewRequest(
+			http.MethodGet,
+			"/packs?page_size=1&page_cursor="+(respPage2JSON.Metadata.PrevCursor),
+			nil,
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, respPage3.StatusCode)
+
+		respPage3JSON := pack.ListPackJSON{}
+		err = json.NewDecoder(respPage3.Body).Decode(&respPage3JSON)
+		assert.Nil(t, err)
+
+		assert.Len(t, respPage3JSON.Items, 1)
+		assert.Equal(t, 1, respPage3JSON.Metadata.PageSize)
+		assert.Equal(t, respPage1JSON.Metadata.NextCursor, respPage3JSON.Metadata.NextCursor)
+		assert.Empty(t, respPage3JSON.Metadata.PrevCursor)
+		assert.Equal(t, respPage1JSON.Items[0].ID, respPage3JSON.Items[0].ID)
+	})
+
+	t.Run("Shoud list packs successfully with sender_name filter", func(t *testing.T) {
+		createPack(t, &createPackParams{SenderName: "test_sender"})
+
+		resp, err := clientApp(httptest.NewRequest(
+			http.MethodGet,
+			"/packs?sender_name=test_sender",
+			nil,
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		respJSON := pack.ListPackJSON{}
+		err = json.NewDecoder(resp.Body).Decode(&respJSON)
+		assert.Nil(t, err)
+
+		assert.Len(t, respJSON.Items, 1)
+		assert.Equal(t, 100, respJSON.Metadata.PageSize)
+		assert.Empty(t, respJSON.Metadata.NextCursor)
+		assert.Empty(t, respJSON.Metadata.PrevCursor)
+		assert.Equal(t, "test_sender", respJSON.Items[0].SenderName)
+	})
+
+	t.Run("Shoud list packs successfully with sender_name filter", func(t *testing.T) {
+		createPack(t, &createPackParams{RecipientName: "Recipient_sender"})
+
+		resp, err := clientApp(httptest.NewRequest(
+			http.MethodGet,
+			"/packs?recipient_name=Recipient_sender",
+			nil,
+		))
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		respJSON := pack.ListPackJSON{}
+		err = json.NewDecoder(resp.Body).Decode(&respJSON)
+		assert.Nil(t, err)
+
+		assert.Len(t, respJSON.Items, 1)
+		assert.Equal(t, 100, respJSON.Metadata.PageSize)
+		assert.Empty(t, respJSON.Metadata.NextCursor)
+		assert.Empty(t, respJSON.Metadata.PrevCursor)
+		assert.Equal(t, "Recipient_sender", respJSON.Items[0].ReceiverName)
+	})
+}
+
 func TestUpdatePackStatus(t *testing.T) {
 	t.Run("Shoud update a pack status from CREATED to IN_TRANSIT successfully", func(t *testing.T) {
-		createdPack := createPack(t)
+		createdPack := createPack(t, nil)
 
 		resp, err := clientApp(httptest.NewRequest(
 			http.MethodPatch,
@@ -197,7 +336,7 @@ func TestUpdatePackStatus(t *testing.T) {
 	})
 
 	t.Run("Shoud update a pack status from IN_TRANSIT to DELIVERED successfully", func(t *testing.T) {
-		createdPack := createPack(t)
+		createdPack := createPack(t, nil)
 
 		resp, err := clientApp(httptest.NewRequest(
 			http.MethodPatch,
@@ -236,7 +375,7 @@ func TestUpdatePackStatus(t *testing.T) {
 	})
 
 	t.Run("Shoud return error when skip from CREATED to DELIVERED", func(t *testing.T) {
-		createdPack := createPack(t)
+		createdPack := createPack(t, nil)
 
 		resp, err := clientApp(httptest.NewRequest(
 			http.MethodPatch,
@@ -276,7 +415,7 @@ func TestUpdatePackStatus(t *testing.T) {
 
 func TestCancelPack(t *testing.T) {
 	t.Run("Shoud cancel a pack successfully", func(t *testing.T) {
-		createdPack := createPack(t)
+		createdPack := createPack(t, nil)
 
 		resp, err := clientApp(httptest.NewRequest(
 			http.MethodPost,
@@ -303,7 +442,7 @@ func TestCancelPack(t *testing.T) {
 	})
 
 	t.Run("Shoud return error when try to cancel a in transit pack", func(t *testing.T) {
-		createdPack := createPack(t)
+		createdPack := createPack(t, nil)
 
 		resp, err := clientApp(httptest.NewRequest(
 			http.MethodPatch,
@@ -325,7 +464,7 @@ func TestCancelPack(t *testing.T) {
 	})
 
 	t.Run("Shoud return error when try to cancel a delivered pack", func(t *testing.T) {
-		createdPack := createPack(t)
+		createdPack := createPack(t, nil)
 
 		resp, err := clientApp(httptest.NewRequest(
 			http.MethodPatch,
@@ -367,8 +506,25 @@ func TestCancelPack(t *testing.T) {
 	})
 }
 
-func createPack(t *testing.T) pack.PackJSON {
+type createPackParams struct {
+	SenderName    string
+	RecipientName string
+}
+
+func createPack(t *testing.T, params *createPackParams) pack.PackJSON {
 	defer gock.Off()
+
+	if params == nil {
+		params = &createPackParams{}
+	}
+
+	if params.SenderName == "" {
+		params.SenderName = "Loja ABC"
+	}
+
+	if params.RecipientName == "" {
+		params.RecipientName = "João Silva"
+	}
 
 	gock.New(dogApiURL).
 		Get("/facts").
@@ -410,8 +566,8 @@ func createPack(t *testing.T) pack.PackJSON {
 		"/packs",
 		bytes.NewBuffer([]byte(`{
 			"description": "Livros para entrega",
-			"sender": "Loja ABC",
-			"recipient": "João Silva",
+			"sender": "`+params.SenderName+`",
+			"recipient": "`+params.RecipientName+`",
 			"estimated_delivery_date": "2025-04-02"
 		}`)),
 	))

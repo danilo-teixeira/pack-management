@@ -20,7 +20,7 @@ type (
 	Params struct {
 		DBHost     string `validate:"required"`
 		DBPort     string `validate:"required"`
-		DBName     string `validate:"required"`
+		DBName     string
 		DBUser     string `validate:"required"`
 		DBPassword string `validate:"required"`
 	}
@@ -56,27 +56,30 @@ func validateParams(params *Params) {
 
 func (s *service) Connect() (*bun.DB, error) {
 	host := fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s?parseTime=true",
+		"%s:%s@tcp(%s:%s)/",
 		s.dbUser,
 		s.dbPassword,
 		s.dbHost,
 		s.dbPort,
-		s.dbName,
 	)
+
+	if s.dbName != "" {
+		host = fmt.Sprintf("%s%s?parseTime=true", host, s.dbName)
+	}
 
 	sqldb, err := sql.Open("mysql", host)
 	if err != nil {
 		return nil, err
 	}
 
-	db := bun.NewDB(sqldb, mysqldialect.New())
+	bunDB := bun.NewDB(sqldb, mysqldialect.New())
 
-	db.AddQueryHook(bundebug.NewQueryHook(bundebug.FromEnv("BUNDEBUG")))
+	bunDB.AddQueryHook(bundebug.NewQueryHook(bundebug.FromEnv("BUNDEBUG")))
 
-	_, err = db.Query("SELECT 1")
-	if err != nil {
-		return nil, err
-	}
+	// _, err = db.Query("SELECT 1")
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	return db, nil
+	return bunDB, nil
 }

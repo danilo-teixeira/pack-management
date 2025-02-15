@@ -1,7 +1,8 @@
 default: run
 
 init:
-	cp .env.example .env
+	cp .env.example .env \
+	cp .env.example .env.test
 
 # Install dependencies
 install:

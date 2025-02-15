@@ -4,6 +4,7 @@ import (
 	"context"
 	"pack-management/internal/domain/packevent"
 	"pack-management/internal/domain/person"
+	"pack-management/internal/pkg/pagination"
 	"time"
 
 	"github.com/uptrace/bun"
@@ -12,6 +13,7 @@ import (
 type (
 	Repository interface {
 		Create(ctx context.Context, pack *Entity) error
+		List(ctx context.Context, filters *ListFilters) ([]*Entity, *pagination.Metadata, error)
 		UpdateByID(ctx context.Context, ID string, pack *Entity) error
 		GetByID(ctx context.Context, ID string, withEvents bool) (*Entity, error)
 	}
