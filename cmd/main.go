@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"pack-management/internal/domain/metric"
 	"pack-management/internal/domain/pack"
 	"pack-management/internal/domain/packevent"
 	"pack-management/internal/domain/person"
@@ -51,6 +52,10 @@ func main() {
 		DisableStartupMessage:    true,
 		EnablePrintRoutes:        false,
 		EnableSplittingOnParsers: true,
+	})
+
+	metric.NewHTPPHandler(&metric.HandlerParams{
+		App: app,
 	})
 
 	baseClient := client.NewClient()
