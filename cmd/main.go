@@ -93,7 +93,8 @@ func main() {
 		DB: db,
 	})
 	packEventSvc := packevent.NewService(&packevent.ServiceParams{
-		Repo: packEventRepo,
+		Repo:        packEventRepo,
+		PackService: packSvc,
 	})
 	packevent.NewHTPPHandler(&packevent.HandlerParams{
 		Service: packEventSvc,

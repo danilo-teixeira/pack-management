@@ -1,9 +1,8 @@
 package pack
 
 import (
-	"errors"
-	"pack-management/internal/domain/packevent"
 	"pack-management/internal/domain/person"
+	"pack-management/internal/pkg/cerrors"
 	"time"
 )
 
@@ -21,7 +20,15 @@ type (
 		CanceledAt            *time.Time
 		CreatedAt             time.Time
 		UpdatedAt             time.Time
-		Events                []*packevent.Entity
+		Events                []*EventEntity
+	}
+
+	EventEntity struct {
+		ID          string
+		PackID      string
+		Description string
+		Location    string
+		Date        time.Time
 	}
 
 	Status string
@@ -33,9 +40,9 @@ var (
 	StatusDelivered Status = "DELIVERED"
 	StatusCanceled  Status = "CANCELED"
 
-	ErrPackNotFound  = errors.New("pack not found")
-	ErrStatusInvalid = errors.New("status is invalid")
-	ErrCannotCancel  = errors.New("cannot cancel pack")
+	ErrPackNotFound  = cerrors.New("pack not found", "pack_not_found")
+	ErrStatusInvalid = cerrors.New("the informed status is invalid", "status_invalid")
+	ErrCannotCancel  = cerrors.New("cannot cancel pack is already sent", "cannot_cancel")
 )
 
 func (e *Entity) ToModel() *Model {
@@ -68,6 +75,22 @@ func (e *Entity) ToModel() *Model {
 
 	if e.Sender != nil {
 		model.SenderID = &e.Sender.ID
+	}
+
+	return model
+}
+
+func (e *EventEntity) ToModel() *EventModel {
+	if e == nil {
+		return nil
+	}
+
+	model := &EventModel{
+		ID:          e.ID,
+		PackID:      e.PackID,
+		Description: e.Description,
+		Location:    e.Location,
+		Date:        e.Date,
 	}
 
 	return model

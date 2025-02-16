@@ -2,7 +2,6 @@ package pack
 
 import (
 	"context"
-	"pack-management/internal/domain/packevent"
 	"pack-management/internal/domain/person"
 	"pack-management/internal/pkg/pagination"
 	"time"
@@ -20,21 +19,30 @@ type (
 
 	Model struct {
 		bun.BaseModel         `bun:"table:pack,alias:pack"`
-		ID                    string             `bun:"id,pk"`
-		Description           string             `bun:"description"`
-		FunFact               *string            `bun:"fun_fact"`
-		IsHoliday             *bool              `bun:"is_holiday"`
-		Status                Status             `bun:"status"`
-		EstimatedDeliveryDate time.Time          `bun:"estimated_delivery_date"`
-		DeliveredAt           *time.Time         `bun:"delivered_at"`
-		CanceledAt            *time.Time         `bun:"canceled_at"`
-		CreatedAt             time.Time          `bun:"created_at"`
-		UpdatedAt             time.Time          `bun:"updated_at"`
-		ReceiverID            *string            `bun:"receiver_id"`
-		Receiver              *person.Model      `bun:"rel:belongs-to"`
-		SenderID              *string            `bun:"sender_id"`
-		Sender                *person.Model      `bun:"rel:belongs-to"`
-		Events                []*packevent.Model `bun:"rel:has-many,join:id=pack_id"`
+		ID                    string        `bun:"id,pk"`
+		Description           string        `bun:"description"`
+		FunFact               *string       `bun:"fun_fact"`
+		IsHoliday             *bool         `bun:"is_holiday"`
+		Status                Status        `bun:"status"`
+		EstimatedDeliveryDate time.Time     `bun:"estimated_delivery_date"`
+		DeliveredAt           *time.Time    `bun:"delivered_at"`
+		CanceledAt            *time.Time    `bun:"canceled_at"`
+		CreatedAt             time.Time     `bun:"created_at"`
+		UpdatedAt             time.Time     `bun:"updated_at"`
+		ReceiverID            *string       `bun:"receiver_id"`
+		Receiver              *person.Model `bun:"rel:belongs-to"`
+		SenderID              *string       `bun:"sender_id"`
+		Sender                *person.Model `bun:"rel:belongs-to"`
+		Events                []*EventModel `bun:"rel:has-many,join:id=pack_id"`
+	}
+
+	EventModel struct {
+		bun.BaseModel `bun:"table:pack_event,alias:pack_event"`
+		ID            string    `bun:"id,pk"`
+		PackID        string    `bun:"pack_id"`
+		Description   string    `bun:"description"`
+		Location      string    `bun:"location"`
+		Date          time.Time `bun:"date"`
 	}
 )
 
@@ -49,7 +57,7 @@ func (m *Model) ToEntity() *Entity {
 
 	estimatedDeliveryDate := m.EstimatedDeliveryDate.Format(time.DateOnly)
 
-	events := make([]*packevent.Entity, len(m.Events))
+	events := make([]*EventEntity, len(m.Events))
 	for i, event := range m.Events {
 		events[i] = event.ToEntity()
 	}
@@ -68,5 +76,19 @@ func (m *Model) ToEntity() *Entity {
 		Receiver:              m.Receiver.ToEntity(),
 		Sender:                m.Sender.ToEntity(),
 		Events:                events,
+	}
+}
+
+func (m *EventModel) ToEntity() *EventEntity {
+	if m == nil {
+		return nil
+	}
+
+	return &EventEntity{
+		ID:          m.ID,
+		PackID:      m.PackID,
+		Description: m.Description,
+		Location:    m.Location,
+		Date:        m.Date,
 	}
 }

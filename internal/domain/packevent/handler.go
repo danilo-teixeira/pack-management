@@ -1,6 +1,8 @@
 package packevent
 
 import (
+	"pack-management/internal/domain/pack"
+	"pack-management/internal/pkg/cerrors"
 	"pack-management/internal/pkg/validator"
 	"time"
 
@@ -68,10 +70,18 @@ func (h *handler) createEvent(ctx *fiber.Ctx) error {
 
 	_, err = h.service.CreateEvent(ctx.Context(), payload.ToEntity())
 	if err != nil {
-		return ctx.SendStatus(fiber.StatusInternalServerError)
+		return h.errorHandler(ctx, err)
 	}
 
 	return ctx.SendStatus(fiber.StatusNoContent)
+}
+
+func (h *handler) errorHandler(ctx *fiber.Ctx, err error) error {
+	if cerrors.Is(err, pack.ErrPackNotFound) {
+		return ctx.Status(fiber.StatusNotFound).JSON(err)
+	}
+
+	return ctx.SendStatus(fiber.StatusInternalServerError)
 }
 
 func (r *CreateEventRequest) ToEntity() *Entity {

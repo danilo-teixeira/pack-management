@@ -1,9 +1,8 @@
 package pack
 
 import (
-	"errors"
-	"pack-management/internal/domain/packevent"
 	"pack-management/internal/domain/person"
+	"pack-management/internal/pkg/cerrors"
 	"pack-management/internal/pkg/pagination"
 	"pack-management/internal/pkg/validator"
 	"time"
@@ -55,16 +54,24 @@ type (
 	}
 
 	PackJSON struct {
-		ID           string                `json:"id"`
-		Description  string                `json:"description"`
-		Status       Status                `json:"status"`
-		ReceiverName string                `json:"recipient"`
-		SenderName   string                `json:"sender"`
-		CreatedAt    time.Time             `json:"created_at"`
-		UpdateAt     time.Time             `json:"updated_at"`
-		DeliveredAt  *time.Time            `json:"delivered_at,omitempty"`
-		CanceledAt   *time.Time            `json:"canceled_at,omitempty"`
-		Events       []packevent.EventJSON `json:"events,omitempty"`
+		ID           string      `json:"id"`
+		Description  string      `json:"description"`
+		Status       Status      `json:"status"`
+		ReceiverName string      `json:"recipient"`
+		SenderName   string      `json:"sender"`
+		CreatedAt    time.Time   `json:"created_at"`
+		UpdateAt     time.Time   `json:"updated_at"`
+		DeliveredAt  *time.Time  `json:"delivered_at,omitempty"`
+		CanceledAt   *time.Time  `json:"canceled_at,omitempty"`
+		Events       []EventJSON `json:"events,omitempty"`
+	}
+
+	EventJSON struct {
+		ID          string    `json:"id"`
+		PackID      string    `json:"pack_id"`
+		Description string    `json:"description"`
+		Location    string    `json:"location"`
+		Date        time.Time `json:"date"`
 	}
 )
 
@@ -205,13 +212,13 @@ func (h *handler) cancelPackStatusByID(ctx *fiber.Ctx) error {
 }
 
 func (h *handler) errorHandler(ctx *fiber.Ctx, err error) error {
-	if errors.Is(err, ErrPackNotFound) {
-		return ctx.SendStatus(fiber.StatusNotFound)
+	if cerrors.Is(err, ErrPackNotFound) {
+		return ctx.Status(fiber.StatusNotFound).JSON(err)
 	}
 
-	if errors.Is(err, ErrStatusInvalid) ||
-		errors.Is(err, ErrCannotCancel) {
-		return ctx.SendStatus(fiber.StatusBadRequest)
+	if cerrors.Is(err, ErrStatusInvalid) ||
+		cerrors.Is(err, ErrCannotCancel) {
+		return ctx.Status(fiber.StatusBadRequest).JSON(err)
 	}
 
 	return ctx.SendStatus(fiber.StatusInternalServerError)
@@ -261,7 +268,7 @@ func (h *handler) packEntityToJSON(pack *Entity) *PackJSON {
 
 	if len(pack.Events) > 0 {
 		for _, event := range pack.Events {
-			resp.Events = append(resp.Events, packevent.EventJSON{
+			resp.Events = append(resp.Events, EventJSON{
 				ID:          event.ID,
 				PackID:      event.PackID,
 				Description: event.Description,

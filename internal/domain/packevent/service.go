@@ -2,6 +2,7 @@ package packevent
 
 import (
 	"context"
+	"pack-management/internal/domain/pack"
 	"pack-management/internal/pkg/validator"
 )
 
@@ -11,11 +12,13 @@ type (
 	}
 
 	service struct {
-		repo Repository
+		repo        Repository
+		packService pack.Service
 	}
 
 	ServiceParams struct {
-		Repo Repository `validate:"required"`
+		Repo        Repository   `validate:"required"`
+		PackService pack.Service `validate:"required"`
 	}
 )
 
@@ -23,7 +26,8 @@ func NewService(params *ServiceParams) Service {
 	params.validate()
 
 	return &service{
-		repo: params.Repo,
+		repo:        params.Repo,
+		packService: params.PackService,
 	}
 }
 
@@ -35,7 +39,12 @@ func (p *ServiceParams) validate() {
 }
 
 func (s *service) CreateEvent(ctx context.Context, event *Entity) (*Entity, error) {
-	err := s.repo.Create(ctx, event)
+	_, err := s.packService.GetPackByID(ctx, event.PackID, false)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.repo.Create(ctx, event)
 	if err != nil {
 		return nil, err
 	}
