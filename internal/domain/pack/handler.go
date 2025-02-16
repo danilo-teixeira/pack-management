@@ -6,6 +6,7 @@ import (
 	"pack-management/internal/domain/person"
 	"pack-management/internal/pkg/pagination"
 	"pack-management/internal/pkg/validator"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -59,10 +60,10 @@ type (
 		Status       Status                `json:"status"`
 		ReceiverName string                `json:"recipient"`
 		SenderName   string                `json:"sender"`
-		CreatedAt    string                `json:"created_at"`
-		UpdateAt     string                `json:"updated_at"`
-		DeliveredAt  string                `json:"delivered_at,omitempty"`
-		CanceledAt   string                `json:"canceled_at,omitempty"`
+		CreatedAt    time.Time             `json:"created_at"`
+		UpdateAt     time.Time             `json:"updated_at"`
+		DeliveredAt  *time.Time            `json:"delivered_at,omitempty"`
+		CanceledAt   *time.Time            `json:"canceled_at,omitempty"`
 		Events       []packevent.EventJSON `json:"events,omitempty"`
 	}
 )
@@ -246,16 +247,16 @@ func (h *handler) packEntityToJSON(pack *Entity) *PackJSON {
 		Status:       pack.Status,
 		ReceiverName: pack.Receiver.Name,
 		SenderName:   pack.Sender.Name,
-		CreatedAt:    pack.CreatedAt.String(),
-		UpdateAt:     pack.UpdatedAt.String(),
+		CreatedAt:    pack.CreatedAt,
+		UpdateAt:     pack.UpdatedAt,
 	}
 
 	if pack.DeliveredAt != nil {
-		resp.DeliveredAt = pack.DeliveredAt.String()
+		resp.DeliveredAt = pack.DeliveredAt
 	}
 
 	if pack.CanceledAt != nil {
-		resp.CanceledAt = pack.CanceledAt.String()
+		resp.CanceledAt = pack.CanceledAt
 	}
 
 	if len(pack.Events) > 0 {
