@@ -3,6 +3,8 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"math"
+	"runtime"
 
 	"pack-management/internal/pkg/validator"
 
@@ -18,32 +20,59 @@ type (
 	}
 
 	Params struct {
-		DBHost     string `validate:"required"`
-		DBPort     string `validate:"required"`
-		DBName     string
-		DBUser     string `validate:"required"`
-		DBPassword string `validate:"required"`
+		DBHost         string `validate:"required"`
+		DBPort         string `validate:"required"`
+		DBName         string
+		DBUser         string `validate:"required"`
+		DBPassword     string `validate:"required"`
+		ConnectionPool *ConnectionPool
+	}
+
+	ConnectionPool struct {
+		MaxOpenConns    int
+		IdleConnsFactor float64
 	}
 
 	service struct {
-		dbHost     string
-		dbPort     string
-		dbName     string
-		dbUser     string
-		dbPassword string
+		dbHost          string
+		dbPort          string
+		dbName          string
+		dbUser          string
+		dbPassword      string
+		MaxOpenConns    int
+		IdleConnsFactor float64
 	}
 )
 
-// TODO: impement connection pool
+func WithPoolConfigLow() *ConnectionPool {
+	return &ConnectionPool{
+		MaxOpenConns:    2,
+		IdleConnsFactor: 0.2,
+	}
+}
+
+func WithPoolConfigHigh() *ConnectionPool {
+	return &ConnectionPool{
+		MaxOpenConns:    100,
+		IdleConnsFactor: 0.2,
+	}
+}
+
 func NewDatabase(params *Params) Service {
 	validateParams(params)
 
+	if params.ConnectionPool == nil {
+		params.ConnectionPool = WithPoolConfigLow()
+	}
+
 	return &service{
-		dbHost:     params.DBHost,
-		dbPort:     params.DBPort,
-		dbName:     params.DBName,
-		dbUser:     params.DBUser,
-		dbPassword: params.DBPassword,
+		dbHost:          params.DBHost,
+		dbPort:          params.DBPort,
+		dbName:          params.DBName,
+		dbUser:          params.DBUser,
+		dbPassword:      params.DBPassword,
+		IdleConnsFactor: params.ConnectionPool.IdleConnsFactor,
+		MaxOpenConns:    params.ConnectionPool.MaxOpenConns,
 	}
 }
 
@@ -72,14 +101,22 @@ func (s *service) Connect() (*bun.DB, error) {
 		return nil, err
 	}
 
-	bunDB := bun.NewDB(sqldb, mysqldialect.New())
+	s.setConnectionPool(sqldb)
 
+	bunDB := bun.NewDB(sqldb, mysqldialect.New())
 	bunDB.AddQueryHook(bundebug.NewQueryHook(bundebug.FromEnv("BUNDEBUG")))
 
-	// _, err = db.Query("SELECT 1")
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	return bunDB, nil
+}
+
+func (s *service) setConnectionPool(db *sql.DB) {
+	maxOpenConns := s.MaxOpenConns * runtime.GOMAXPROCS(0)
+	maxIdleConns := int(math.RoundToEven(float64(maxOpenConns) * s.IdleConnsFactor))
+
+	if maxIdleConns < 1 {
+		maxIdleConns = 1
+	}
+
+	db.SetMaxOpenConns(maxOpenConns)
+	db.SetMaxIdleConns(maxIdleConns)
 }

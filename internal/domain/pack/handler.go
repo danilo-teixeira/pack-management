@@ -1,6 +1,7 @@
 package pack
 
 import (
+	"fmt"
 	"pack-management/internal/domain/person"
 	"pack-management/internal/pkg/cerrors"
 	"pack-management/internal/pkg/pagination"
@@ -170,7 +171,16 @@ func (h handler) getPackByID(ctx *fiber.Ctx) error {
 		return h.errorHandler(ctx, err)
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(h.packEntityToJSON(pack))
+	cacheMaxAge := 60
+	if pack.Status != StatusCreated {
+		cacheMaxAge = 3600
+	}
+
+	ctx.Response().Header.Set("Cache-Control", fmt.Sprintf("max-age=%d", cacheMaxAge))
+
+	return ctx.
+		Status(fiber.StatusOK).
+		JSON(h.packEntityToJSON(pack))
 }
 
 func (h *handler) updatePackStatusByID(ctx *fiber.Ctx) error {

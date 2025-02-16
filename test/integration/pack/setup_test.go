@@ -55,7 +55,8 @@ func beforeAll() {
 		DB: bunDB,
 	})
 	packeventSvc := packevent.NewService(&packevent.ServiceParams{
-		Repo: packeventRepo,
+		Repo:        packeventRepo,
+		PackService: packSvc,
 	})
 	packevent.NewHTPPHandler(&packevent.HandlerParams{
 		Service: packeventSvc,

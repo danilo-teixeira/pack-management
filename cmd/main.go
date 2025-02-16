@@ -34,11 +34,12 @@ func main() {
 	}
 
 	db, err := database.NewDatabase(&database.Params{
-		DBHost:     cfg.DBHost,
-		DBPort:     cfg.DBPort,
-		DBName:     cfg.DBName,
-		DBUser:     cfg.DBUser,
-		DBPassword: cfg.DBPassword,
+		DBHost:         cfg.DBHost,
+		DBPort:         cfg.DBPort,
+		DBName:         cfg.DBName,
+		DBUser:         cfg.DBUser,
+		DBPassword:     cfg.DBPassword,
+		ConnectionPool: database.WithPoolConfigHigh(),
 	}).Connect()
 	if err != nil {
 		log.Fatalf("Database connection error: %v", err)
