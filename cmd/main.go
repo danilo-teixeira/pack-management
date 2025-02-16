@@ -57,6 +57,7 @@ func main() {
 
 	metric.NewHTPPHandler(&metric.HandlerParams{
 		App: app,
+		DB:  db,
 	})
 
 	baseClient := client.NewClient()
