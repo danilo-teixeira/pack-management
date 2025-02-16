@@ -18,7 +18,7 @@ upgrade-pkgs:
 
 # Run
 run:
-	docker-compose -f ./docker-compose.local.yml up --build -d && \
+	docker compose -f './docker-compose.local.yml' up -d --build 'db' && \
 	cd scripts/db/ && ./setup_db.sh && \
 	cd ../../ && LOGGER_FORMAT=cli BUNDEBUG=2 go run cmd/main.go
 
