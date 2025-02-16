@@ -15,4 +15,4 @@ k6 run pack_events.js
 ```
 
 ## Config
-**Service URL**: To change the service URL modify the `baseURL` constant in the ./config.js file.
+**Service URL**: To change the service URL modify the `baseURL` constant in the [config](./config.js#L5) file.
