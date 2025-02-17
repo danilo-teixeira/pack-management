@@ -1,9 +1,5 @@
 default: run
 
-init:
-	cp .env.example .env \
-	cp .env.example .env.test
-
 # Install dependencies
 install:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && \
