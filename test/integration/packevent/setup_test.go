@@ -1,6 +1,7 @@
 package packevent_test
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"pack-management/internal/domain/holiday"
@@ -23,6 +24,7 @@ var (
 )
 
 func beforeAll() {
+	ctx := context.Background()
 	bunDB, app, shutdown := helpers.Setup()
 	shutdownServer = shutdown
 
@@ -62,7 +64,7 @@ func beforeAll() {
 	packeventRepo := packevent.NewMysqlRepository(&packevent.RepositoryParams{
 		DB: bunDB,
 	})
-	packeventSvc := packevent.NewService(&packevent.ServiceParams{
+	packeventSvc := packevent.NewService(ctx, &packevent.ServiceParams{
 		Repo:        packeventRepo,
 		PackService: packSvc,
 	})

@@ -59,21 +59,21 @@ func (a *App) FiberApp() *fiber.App {
 	return a.fiberApp
 }
 
-func (a *App) Shutdown() {
+func (a *App) Shutdown(ctx context.Context) {
 	shutdownC := make(chan os.Signal, 1)
 	signal.Notify(shutdownC, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-shutdownC
 
 	log.Println("Shutting down...")
 
-	defer func() {
-		ctx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
-		defer shutdownRelease()
+	ctx, shutdownRelease := context.WithTimeout(ctx, 10*time.Second)
+	defer shutdownRelease()
 
-		if err := a.fiberApp.ShutdownWithContext(ctx); err != nil {
-			log.Fatalf("HTTP shutdown error: %v", err)
-		}
+	ctx.Done()
 
-		log.Println("Shutdown complete.")
-	}()
+	if err := a.fiberApp.ShutdownWithContext(ctx); err != nil {
+		log.Fatalf("HTTP shutdown error: %v", err)
+	}
+
+	log.Println("Shutdown complete.")
 }

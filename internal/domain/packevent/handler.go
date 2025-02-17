@@ -68,10 +68,7 @@ func (h *handler) createEvent(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(fiber.StatusBadRequest)
 	}
 
-	_, err = h.service.CreateEvent(ctx.Context(), payload.ToEntity())
-	if err != nil {
-		return h.errorHandler(ctx, err)
-	}
+	go h.service.EnqueueEvent(ctx.Context(), payload.ToEntity())
 
 	return ctx.SendStatus(fiber.StatusNoContent)
 }

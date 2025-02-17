@@ -578,4 +578,6 @@ func createEvent(t *testing.T, packID string) {
 	))
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+	time.Sleep(10 * time.Millisecond) // wait for processing
 }

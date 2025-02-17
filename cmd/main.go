@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"pack-management/internal/domain/holiday"
 	"pack-management/internal/domain/metric"
@@ -18,6 +19,8 @@ import (
 const appPort = "3300"
 
 func main() {
+	ctx := context.Background()
+
 	cfg, err := config.NewConfig()
 	if err != nil {
 		log.Fatalf("Config error: %v", err)
@@ -85,7 +88,7 @@ func main() {
 	packEventRepo := packevent.NewMysqlRepository(&packevent.RepositoryParams{
 		DB: db,
 	})
-	packEventSvc := packevent.NewService(&packevent.ServiceParams{
+	packEventSvc := packevent.NewService(ctx, &packevent.ServiceParams{
 		Repo:        packEventRepo,
 		PackService: packSvc,
 	})
@@ -96,5 +99,5 @@ func main() {
 
 	go baseAPP.Start(appPort)
 
-	baseAPP.Shutdown()
+	baseAPP.Shutdown(ctx)
 }
