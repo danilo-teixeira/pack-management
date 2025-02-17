@@ -1,4 +1,5 @@
 # pack-management
+A Golang package track project.
 
 ## Project structure
 
