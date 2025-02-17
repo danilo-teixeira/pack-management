@@ -17,8 +17,8 @@ export const options = {
       gracefulStop: '5s',
       preAllocatedVUs: 10,
       timeUnit: '1m',
-      maxVUs: 1000,
-      rate: 10000,
+      maxVUs: 100,
+      rate: 6000,
       duration: '5m'
     }
   }
@@ -141,7 +141,7 @@ export default function (data) {
       }
     );
 
-    updatePackStatusThread.add(res.timings.duration);
+    updatePackStatusThread.add(res2.timings.duration);
 
     check(res2, {
       'status is 200': r => r.status === 200

@@ -40,8 +40,8 @@ export const options = {
       gracefulStop: '5s',
       preAllocatedVUs: 10,
       timeUnit: '1m',
-      maxVUs: 1000,
-      rate: 20000,
+      maxVUs: 100,
+      rate: 10000,
       duration: '5m'
     }
   }
