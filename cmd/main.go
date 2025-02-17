@@ -1,13 +1,7 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"errors"
 	"log"
-	"net/http"
-	"os"
-	"os/signal"
 	"pack-management/internal/domain/holiday"
 	"pack-management/internal/domain/metric"
 	"pack-management/internal/domain/pack"
@@ -18,15 +12,10 @@ import (
 	"pack-management/internal/pkg/http/client"
 	"pack-management/internal/pkg/http/dogapi"
 	"pack-management/internal/pkg/http/nagerdateapi"
-	"syscall"
-	"time"
-
-	"github.com/gofiber/fiber/v2"
+	"pack-management/internal/pkg/setup"
 )
 
-const (
-	appName = "pack-management"
-)
+const appPort = "3300"
 
 func main() {
 	cfg, err := config.NewConfig()
@@ -46,18 +35,11 @@ func main() {
 		log.Fatalf("Database connection error: %v", err)
 	}
 
-	// TODO: move to separate package???
-	app := fiber.New(fiber.Config{
-		AppName:                  appName,
-		JSONEncoder:              json.Marshal,
-		JSONDecoder:              json.Unmarshal,
-		DisableStartupMessage:    false,
-		EnablePrintRoutes:        false,
-		EnableSplittingOnParsers: true,
-	})
+	baseAPP := setup.NewApp()
+	fiberAPP := baseAPP.FiberApp()
 
 	metric.NewHTPPHandler(&metric.HandlerParams{
-		App: app,
+		App: fiberAPP,
 		DB:  db,
 	})
 
@@ -97,7 +79,7 @@ func main() {
 	})
 	pack.NewHTPPHandler(&pack.HandlerParams{
 		Service: packSvc,
-		App:     app,
+		App:     fiberAPP,
 	})
 
 	packEventRepo := packevent.NewMysqlRepository(&packevent.RepositoryParams{
@@ -109,30 +91,10 @@ func main() {
 	})
 	packevent.NewHTPPHandler(&packevent.HandlerParams{
 		Service: packEventSvc,
-		App:     app,
+		App:     fiberAPP,
 	})
 
-	go func() {
-		err = app.Listen(":3300")
-		if err != nil {
-			if !errors.Is(err, http.ErrServerClosed) {
-				log.Fatalf("HTTP server error: %v", err)
-			}
+	go baseAPP.Start(appPort)
 
-			log.Println("Stopped serving new connections.")
-		}
-	}()
-
-	// TODO: move to separate package???
-	shutdownC := make(chan os.Signal, 1)
-	signal.Notify(shutdownC, syscall.SIGINT, syscall.SIGTERM)
-	<-shutdownC
-
-	ctx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
-	defer shutdownRelease()
-
-	if err := app.ShutdownWithContext(ctx); err != nil {
-		log.Fatalf("HTTP shutdown error: %v", err)
-	}
-	log.Println("Shutdown complete.")
+	baseAPP.Shutdown()
 }
