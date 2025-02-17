@@ -3,12 +3,11 @@ package pack
 import (
 	"context"
 	"log"
+	"pack-management/internal/domain/holiday"
 	"pack-management/internal/domain/person"
 	"pack-management/internal/pkg/http/dogapi"
-	"pack-management/internal/pkg/http/nagerdateapi"
 	"pack-management/internal/pkg/pagination"
 	"pack-management/internal/pkg/validator"
-	"slices"
 	"time"
 )
 
@@ -29,17 +28,17 @@ type (
 	}
 
 	service struct {
-		repo               Repository
-		personService      person.Service
-		dogAPIClient       dogapi.Client
-		nagerDateAPIClient nagerdateapi.Client
+		repo           Repository
+		personService  person.Service
+		dogAPIClient   dogapi.Client
+		holidayService holiday.Service
 	}
 
 	ServiceParams struct {
-		Repo               Repository          `validate:"required"`
-		PersonService      person.Service      `validate:"required"`
-		DogAPIClient       dogapi.Client       `validate:"required"`
-		NagerDateAPIClient nagerdateapi.Client `validate:"required"`
+		Repo           Repository      `validate:"required"`
+		PersonService  person.Service  `validate:"required"`
+		DogAPIClient   dogapi.Client   `validate:"required"`
+		HolidayService holiday.Service `validate:"required"`
 	}
 )
 
@@ -47,10 +46,10 @@ func NewService(params *ServiceParams) Service {
 	params.validate()
 
 	return &service{
-		repo:               params.Repo,
-		personService:      params.PersonService,
-		dogAPIClient:       params.DogAPIClient,
-		nagerDateAPIClient: params.NagerDateAPIClient,
+		repo:           params.Repo,
+		personService:  params.PersonService,
+		dogAPIClient:   params.DogAPIClient,
+		holidayService: params.HolidayService,
 	}
 }
 
@@ -186,17 +185,11 @@ func (s *service) setFunFact(ctx context.Context, pack *Entity) {
 }
 
 func (s *service) setIsHoliday(ctx context.Context, pack *Entity) {
-	year := pack.EstimatedDeliveryDate[:4]
-
-	holidayResp, err := s.nagerDateAPIClient.GetHolidays(ctx, "BR", year) // TODO: Get from cache or from API???
+	isHoliday, err := s.holidayService.IsHoliday(ctx, pack.EstimatedDeliveryDate)
 	if err != nil {
 		// TODO: implement error handler
 		log.Printf("Error getting holidays: %s. pack: %s", err, pack.ID)
 	}
-
-	isHoliday := slices.ContainsFunc(holidayResp, func(holiday nagerdateapi.Holiday) bool {
-		return holiday.Date == pack.EstimatedDeliveryDate
-	})
 
 	pack.IsHoliday = &isHoliday
 

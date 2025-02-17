@@ -69,10 +69,15 @@ func (r *mysqlRepository) BulkCreate(ctx context.Context, holidays []*Entity) er
 	return nil
 }
 
-func (r *mysqlRepository) GetByDate(ctx context.Context, date string) (*Entity, error) {
-	holiday := Model{}
+func (r *mysqlRepository) ListByYear(ctx context.Context, year string) ([]*Entity, error) {
+	holidays := make([]*Model, 0)
+	dateGte := year + "-01-01"
+	dateLte := year + "-12-31"
 
-	err := r.db.NewSelect().Model(&holiday).Where("date = ?", date).Scan(ctx)
+	err := r.db.NewSelect().
+		Model(&holidays).
+		Where("date BETWEEN ? and ?", dateGte, dateLte).
+		Scan(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -81,7 +86,12 @@ func (r *mysqlRepository) GetByDate(ctx context.Context, date string) (*Entity, 
 		return nil, err
 	}
 
-	return holiday.ToEntity(), nil
+	entities := []*Entity{}
+	for _, holiday := range holidays {
+		entities = append(entities, holiday.ToEntity())
+	}
+
+	return entities, nil
 }
 
 func (r *mysqlRepository) newID() string {

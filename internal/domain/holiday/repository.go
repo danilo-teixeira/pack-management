@@ -11,7 +11,7 @@ type (
 	Repository interface {
 		Create(ctx context.Context, holiday *Entity) error
 		BulkCreate(ctx context.Context, holidays []*Entity) error
-		GetByDate(ctx context.Context, date string) (*Entity, error)
+		ListByYear(ctx context.Context, year string) ([]*Entity, error)
 	}
 
 	Model struct {

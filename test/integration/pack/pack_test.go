@@ -542,25 +542,6 @@ func createPack(t *testing.T, params *createPackParams) pack.PackJSON {
 			]
 		}`)
 
-	gock.New(negerDateAPIURL).
-		Get("/PublicHolidays/2025/BR").
-		Reply(http.StatusOK).
-		JSON(`[
-			{
-				"date": "2025-01-01",
-				"localName": "Confraternização Universal",
-				"name": "New Year's Day",
-				"countryCode": "BR",
-				"fixed": false,
-				"global": true,
-				"counties": null,
-				"launchYear": null,
-				"types": [
-					"Public"
-				]
-			}
-		]`)
-
 	resp, err := clientApp(httptest.NewRequest(
 		http.MethodPost,
 		"/packs",

@@ -3,6 +3,7 @@ package packevent_test
 import (
 	"net/http"
 	"os"
+	"pack-management/internal/domain/holiday"
 	"pack-management/internal/domain/pack"
 	"pack-management/internal/domain/packevent"
 	"pack-management/internal/domain/person"
@@ -29,6 +30,14 @@ func beforeAll() {
 	dogAPIClient := dogapi.NewDogAPIClient(baseClient, dogApiURL)
 	nagerDateAPIClient := nagerdateapi.NewHolidayAPIClient(baseClient, negerDateAPIURL)
 
+	holidayRepo := holiday.NewMysqlRepository(&holiday.RepositoryParams{
+		DB: bunDB,
+	})
+	holidaySvc := holiday.NewService(&holiday.ServiceParams{
+		Repo:   holidayRepo,
+		Client: nagerDateAPIClient,
+	})
+
 	personRepo := person.NewMysqlRepository(&person.RepositoryParams{
 		DB: bunDB,
 	})
@@ -40,10 +49,10 @@ func beforeAll() {
 		DB: bunDB,
 	})
 	packSvc := pack.NewService(&pack.ServiceParams{
-		Repo:               packRepo,
-		PersonService:      personSvc,
-		DogAPIClient:       dogAPIClient,
-		NagerDateAPIClient: nagerDateAPIClient,
+		Repo:           packRepo,
+		PersonService:  personSvc,
+		DogAPIClient:   dogAPIClient,
+		HolidayService: holidaySvc,
 	})
 	pack.NewHTPPHandler(&pack.HandlerParams{
 		Service: packSvc,

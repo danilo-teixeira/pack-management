@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"pack-management/internal/domain/holiday"
 	"pack-management/internal/domain/metric"
 	"pack-management/internal/domain/pack"
 	"pack-management/internal/domain/packevent"
@@ -50,7 +51,7 @@ func main() {
 		AppName:                  appName,
 		JSONEncoder:              json.Marshal,
 		JSONDecoder:              json.Unmarshal,
-		DisableStartupMessage:    true,
+		DisableStartupMessage:    false,
 		EnablePrintRoutes:        false,
 		EnableSplittingOnParsers: true,
 	})
@@ -70,6 +71,14 @@ func main() {
 		"https://date.nager.at/api/v3",
 	)
 
+	holidayRepo := holiday.NewMysqlRepository(&holiday.RepositoryParams{
+		DB: db,
+	})
+	holidaySvc := holiday.NewService(&holiday.ServiceParams{
+		Repo:   holidayRepo,
+		Client: nagerDateAPIClient,
+	})
+
 	personRepo := person.NewMysqlRepository(&person.RepositoryParams{
 		DB: db,
 	})
@@ -81,10 +90,10 @@ func main() {
 		DB: db,
 	})
 	packSvc := pack.NewService(&pack.ServiceParams{
-		Repo:               packRepo,
-		PersonService:      personSvc,
-		DogAPIClient:       dogAPIClient,
-		NagerDateAPIClient: nagerDateAPIClient,
+		Repo:           packRepo,
+		PersonService:  personSvc,
+		DogAPIClient:   dogAPIClient,
+		HolidayService: holidaySvc,
 	})
 	pack.NewHTPPHandler(&pack.HandlerParams{
 		Service: packSvc,

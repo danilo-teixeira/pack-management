@@ -4,11 +4,12 @@ import (
 	"context"
 	naegerdateapi "pack-management/internal/pkg/http/nagerdateapi"
 	"pack-management/internal/pkg/validator"
+	"slices"
 )
 
 type (
 	Service interface {
-		GetByDate(ctx context.Context, date string) (*Entity, error)
+		IsHoliday(ctx context.Context, date string) (bool, error)
 	}
 
 	service struct {
@@ -42,18 +43,29 @@ func (p *ServiceParams) validate() {
 	}
 }
 
-func (s *service) GetByDate(ctx context.Context, date string) (*Entity, error) {
-	holiday, err := s.repo.GetByDate(ctx, date)
-	if err != nil {
-		return nil, err
-	}
-
-	if holiday != nil {
-		return holiday, nil
-	}
-
+func (s *service) IsHoliday(ctx context.Context, date string) (bool, error) {
 	year := date[:4]
 
+	holidays, err := s.repo.ListByYear(ctx, year)
+	if err != nil {
+		return false, err
+	}
+
+	if len(holidays) <= 0 {
+		holidays, err = s.getHolidaysFromProvider(ctx, year)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	isHoliday := slices.ContainsFunc(holidays, func(holiday *Entity) bool {
+		return holiday != nil && holiday.Date == date
+	})
+
+	return isHoliday, nil
+}
+
+func (s *service) getHolidaysFromProvider(ctx context.Context, year string) ([]*Entity, error) {
 	holidayResponse, err := s.client.GetHolidays(ctx, countryCode, year)
 	if err != nil {
 		return nil, err
@@ -74,5 +86,5 @@ func (s *service) GetByDate(ctx context.Context, date string) (*Entity, error) {
 		return nil, err
 	}
 
-	return s.repo.GetByDate(ctx, date)
+	return holidays, nil
 }
