@@ -166,7 +166,6 @@ func (s *service) CancelPackStatusByID(ctx context.Context, id string) (*Entity,
 func (s *service) setFunFact(ctx context.Context, pack *Entity) {
 	funFacts, err := s.dogAPIClient.GetRandomFacts(ctx, 1)
 	if err != nil {
-		// TODO: implement error handler
 		log.Printf("Error getting fun facts: %s. pack: %s", err, pack.ID)
 		return
 	}
@@ -187,7 +186,6 @@ func (s *service) setFunFact(ctx context.Context, pack *Entity) {
 func (s *service) setIsHoliday(ctx context.Context, pack *Entity) {
 	isHoliday, err := s.holidayService.IsHoliday(ctx, pack.EstimatedDeliveryDate)
 	if err != nil {
-		// TODO: implement error handler
 		log.Printf("Error getting holidays: %s. pack: %s", err, pack.ID)
 	}
 
@@ -195,7 +193,6 @@ func (s *service) setIsHoliday(ctx context.Context, pack *Entity) {
 
 	err = s.repo.UpdateByID(ctx, pack.ID, pack)
 	if err != nil {
-		// TODO: implement error handler
 		log.Printf("Error updating pack: (%s). pack: %s", err, pack.ID)
 	}
 }
