@@ -14,6 +14,8 @@ type (
 		Create(ctx context.Context, pack *Entity) error
 		List(ctx context.Context, filters *ListFilters) ([]*Entity, *pagination.Metadata, error)
 		UpdateByID(ctx context.Context, ID string, pack *Entity) error
+		UpdateFunFactByID(ctx context.Context, ID string, funFact string) error
+		UpdateIsHolidayByID(ctx context.Context, ID string, isHoliday bool) error
 		GetByID(ctx context.Context, ID string, withEvents bool) (*Entity, error)
 	}
 

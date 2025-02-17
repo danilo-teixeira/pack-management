@@ -177,7 +177,7 @@ func (s *service) setFunFact(ctx context.Context, pack *Entity) {
 
 	pack.FunFact = &funFacts[0].Attributes.Body
 
-	err = s.repo.UpdateByID(ctx, pack.ID, pack)
+	err = s.repo.UpdateFunFactByID(ctx, pack.ID, *pack.FunFact)
 	if err != nil {
 		log.Printf("Error updating pack: (%s). pack: %s", err, pack.ID)
 	}
@@ -191,7 +191,7 @@ func (s *service) setIsHoliday(ctx context.Context, pack *Entity) {
 
 	pack.IsHoliday = &isHoliday
 
-	err = s.repo.UpdateByID(ctx, pack.ID, pack)
+	err = s.repo.UpdateIsHolidayByID(ctx, pack.ID, *pack.IsHoliday)
 	if err != nil {
 		log.Printf("Error updating pack: (%s). pack: %s", err, pack.ID)
 	}

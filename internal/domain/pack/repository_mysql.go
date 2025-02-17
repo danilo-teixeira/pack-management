@@ -119,6 +119,38 @@ func (r *mysqlRepository) UpdateByID(ctx context.Context, ID string, pack *Entit
 	return nil
 }
 
+func (r *mysqlRepository) UpdateFunFactByID(ctx context.Context, ID string, funFact string) error {
+	model := Model{
+		FunFact:   &funFact,
+		UpdatedAt: time.Now(),
+	}
+
+	_, err := r.db.NewUpdate().
+		Model(&model).
+		Where("id = ?", ID).Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *mysqlRepository) UpdateIsHolidayByID(ctx context.Context, ID string, isHoliday bool) error {
+	model := Model{
+		IsHoliday: &isHoliday,
+		UpdatedAt: time.Now(),
+	}
+
+	_, err := r.db.NewUpdate().
+		Model(&model).
+		Where("id = ?", ID).Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *mysqlRepository) GetByID(ctx context.Context, ID string, withEvents bool) (*Entity, error) {
 	pack := Model{}
 
